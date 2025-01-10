@@ -6,3 +6,5 @@ pandas
 sqlmodel
 passlib
 python-multipart
+starlette
+itsdangerous

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <main class="container">
+        <nav>
+            <ul>
+                <li><strong>Login</strong></li>
+            </ul>
+        </nav>
+        <article>
+            {% if error %}
+            <div class="alert alert-error" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
+            <form action="/token" method="post">
+                <div class="grid">
+                    <label for="username">
+                        Username
+                        <input type="text" id="username" name="username" required>
+                    </label>
+                    <label for="password">
+                        Password
+                        <input type="password" id="password" name="password" required>
+                    </label>
+                </div>
+                <button type="submit" class="contrast">Login</button>
+            </form>
+            <p>Don't have an account? <a href="/register">Register</a></p>
+        </article>
+    </main>
+</body>
+</html>
