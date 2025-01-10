@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ item.name }} Details</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <main class="container">
+        <nav>
+            <ul>
+                <li><a href="/">Back to List</a></li>
+                <li><strong>{{ item.name }} Details</strong></li>
+            </ul>
+        </nav>
+        <div class="grid">
+            <div>
+                <table role="grid">
+                    <tbody>
+                        {% for key, value in item.items() %}
+                        <tr>
+                            <th>{{ key|capitalize }}</th>
+                            <td>{{ value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <p><strong>Placeholder:</strong> {{ placeholder_value }}</p>
+            </div>
+        </div>
+        <button type="button">Edit Item</button>
+    </main>
+</body>
+</html>
