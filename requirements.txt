@@ -3,3 +3,6 @@ uvicorn
 Jinja2
 requests
 pandas
+sqlmodel
+passlib
+python-multipart
