@@ -1,0 +1,34 @@
+{% macro render_item_table(items, form_data) %}
+<table role="grid">
+    <thead>
+        <tr>
+            {% for key in items[0] %}
+                {% if key == 'description' %}
+                    <th>Input Field</th>
+                {% else %}
+                    <th>{{ key|capitalize }}</th>
+                {% endif %}
+            {% endfor %}
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            {% for key, value in item.items() %}
+                {% if key == 'description' %}
+                    <td>
+                        <input type="text" name="item_{{ item.id }}_description" value="{{ form_data.get('item_' ~ item.id ~ '_description', value) }}">
+                    </td>
+                {% else %}
+                    <td>{{ value }}</td>
+                {% endif %}
+            {% endfor %}
+            <td><a href="/{{ item.id }}/" role="button" class="outline">View Details</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+{{ render_item_table(items, form_data) }}

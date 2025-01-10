@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ item.name }} Details</title>
+    <title>Details</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 </head>
 <body>
@@ -19,27 +19,19 @@
                 {% if current_user.id == 369 %}
                     <li><a href="/">Back to List</a></li>
                 {% endif %}
-                <li><strong>{{ item.name }} Details</strong></li>
             </ul>
         </nav>
         <div class="grid">
             <div>
-                <table role="grid">
-                    <tbody>
-                        {% for key, value in item.items() %}
-                        <tr>
-                            <th>{{ key|capitalize }}</th>
-                            <td>{{ value }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <form method="post" action="/calculate">
+                    {% include 'item_table.html' %}
+                    <button type="submit">Calculate</button>
+                </form>
             </div>
             <div>
                 <p><strong>Placeholder:</strong> {{ placeholder_value }}</p>
             </div>
         </div>
-        <button type="button"><a href="/calculate">Calculate</a></button>
     </main>
 </body>
 </html>

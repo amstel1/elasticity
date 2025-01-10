@@ -10,22 +10,30 @@ from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from passlib.context import CryptContext
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.datastructures import FormData
+import json
+from loguru import logger
 
 DATABASE_URL = "sqlite:///./elasticity_model.db"
 engine = create_engine(DATABASE_URL, echo=True)
 
+
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
 
 PASSWORD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="/token")
 SECRET_KEY = "your_secret_key"
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return PASSWORD_CONTEXT.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
     return PASSWORD_CONTEXT.hash(password)
+
 
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -33,14 +41,17 @@ class User(SQLModel, table=True):
     hashed_password: str
     disabled: bool = Field(default=False)
 
+
 class UserCreate(SQLModel):
     id: int | None
     user_name: str
     password: str
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
@@ -53,22 +64,26 @@ items = [
     {"id": 3, "name": "Item C", "description": "Description for Item C"},
 ]
 
+
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+
 
 def get_db():
     with Session(engine) as session:
         yield session
 
+
 async def get_current_user(
-    request: Request, db: Session = Depends(get_db)
+        request: Request, db: Session = Depends(get_db)
 ):
     token = request.session.get("access_token")
     if not token:
         return None
     user = db.exec(select(User).where(User.user_name == token)).first()
     return user
+
 
 async def get_current_active_user(request: Request, current_user: Annotated[Optional[User], Depends(get_current_user)]):
     if not current_user:
@@ -82,19 +97,22 @@ async def get_current_active_user(request: Request, current_user: Annotated[Opti
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
 
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request, error: Optional[str] = None):
     return templates.TemplateResponse("login.html", {"request": request, "error": error})
 
+
 @app.post("/token", response_class=RedirectResponse)
 async def login_process(
-    request: Request,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(get_db)
+        request: Request,
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        db: Session = Depends(get_db)
 ):
     user = db.exec(select(User).where(User.user_name == form_data.username)).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
-        return RedirectResponse(url="/login?error=Incorrect username or password", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/login?error=Incorrect username or password",
+                                status_code=status.HTTP_303_SEE_OTHER)
 
     request.session["access_token"] = user.user_name
     redirect_url = request.session.pop("redirect_url", None)
@@ -103,10 +121,12 @@ async def login_process(
     else:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
+
 @app.get("/logout")
 async def logout(request: Request):
     request.session.pop("access_token", None)
     return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -114,11 +134,12 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
     hashed_password = get_password_hash(user.password)
-    db_user = User(id = user.id, user_name=user.user_name, hashed_password=hashed_password)
+    db_user = User(id=user.id, user_name=user.user_name, hashed_password=hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return {"message": "User registered successfully"}
+
 
 @app.get("/", response_class=HTMLResponse)
 async def list_view(
@@ -128,7 +149,16 @@ async def list_view(
 ):
     if not (current_user.user_name.lower().startswith('ca')):
         return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
-    return templates.TemplateResponse("list.html", {"request": request, "items": items, "current_user": current_user})
+
+    form_data = request.session.get("form_data")
+    if form_data:
+        form_data = json.loads(form_data)
+    else:
+        form_data = {}
+    logger.debug(items)
+    return templates.TemplateResponse("list.html", {"request": request, "items": items, "current_user": current_user,
+                                                    "form_data": form_data})
+
 
 @app.get("/{item_id}/", response_class=HTMLResponse)
 async def detail_view(
@@ -140,16 +170,60 @@ async def detail_view(
     if item_id == 369:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-    item = next((item for item in items if item["id"] == item_id), None)
-    if not item:
-        return HTMLResponse(content="Item not found", status_code=404)
+    # item = next((item for item in items if item["id"] == item_id), None)
+    # if not item:
+    #     return HTMLResponse(content="Item not found", status_code=404)
 
     if (current_user.id != item_id) and not (current_user.user_name.lower().startswith('ca')):
         return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
 
     placeholder_value = "This is a placeholder value."
-    return templates.TemplateResponse("detail.html", {"request": request, "item": item, "placeholder_value": placeholder_value, "current_user": current_user})
 
+    form_data = request.session.get("form_data")
+    if form_data:
+        form_data = json.loads(form_data)
+    else:
+        form_data = {}
+    detail_view_items = [item for item in items if item.get('id') == item_id]
+    return templates.TemplateResponse("detail.html",
+                                      {"request": request, "items": detail_view_items, "placeholder_value": placeholder_value,
+                                       "current_user": current_user, "form_data": form_data})
+
+
+@app.post("/calculate")
+async def calculate(request: Request, current_user: Annotated[User, Depends(get_current_active_user)]):
+    form_data = await request.form()
+    old_form_data_str = request.session.get("form_data", "{}")  # Get as string, default to empty JSON string
+    logger.debug(f"Old form data (str): {old_form_data_str}, Type: {type(old_form_data_str)}")
+
+    try:
+        old_form_data = json.loads(old_form_data_str)
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON in old_form_data, resetting.")
+        old_form_data = {}
+
+    form_data = dict(form_data)
+    logger.debug(f"New form data: {form_data}, Type: {type(form_data)}")
+
+    # Update old_form_data with the new form_data, overwriting only existing keys
+    old_form_data.update(form_data)
+
+    request.session["form_data"] = json.dumps(old_form_data)
+
+    # Extract form data based on request type and URL
+    referer = request.headers.get("referer")
+    if referer.endswith("/"):
+        # Process list view form data
+        print("List view form data dict:", old_form_data)  # Log the merged data
+    elif referer.split("/")[-2].isdigit():
+        item_id = int(referer.split("/")[-2])
+        # Process details view form data
+        print(f"Details view form data dict (item_id: {item_id}):", old_form_data)  # Log the merged data
+    else:
+        print("referer", referer)
+
+    # Redirect back to the page where the form was submitted
+    return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
 
 
 if __name__ == "__main__":
