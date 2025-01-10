@@ -15,3 +15,10 @@ if __name__ == '__main__':
         'password': 'ca_user',
     }))
     print(response)
+
+    # import random
+    # import string
+    #
+    # length = 3
+    # random_string = ''.join([random.choice(string.ascii_letters.lower() + string.digits) for _ in range(length)])
+    # print(random_string)

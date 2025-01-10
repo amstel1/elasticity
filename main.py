@@ -101,7 +101,6 @@ async def login_process(
     if redirect_url:
         return RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
     else:
-        # Redirect to the list view if no initial URL is stored
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/logout")
@@ -129,11 +128,6 @@ async def list_view(
 ):
     if not (current_user.user_name.lower().startswith('ca')):
         return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
-        # raise HTTPException(
-        #     status_code=status.HTTP_403_FORBIDDEN,
-        #     detail="You do not have permission to access this page.",
-        # )
-
     return templates.TemplateResponse("list.html", {"request": request, "items": items, "current_user": current_user})
 
 @app.get("/{item_id}/", response_class=HTMLResponse)
@@ -155,6 +149,8 @@ async def detail_view(
 
     placeholder_value = "This is a placeholder value."
     return templates.TemplateResponse("detail.html", {"request": request, "item": item, "placeholder_value": placeholder_value, "current_user": current_user})
+
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
