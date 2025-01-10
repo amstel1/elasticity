@@ -1,34 +1,37 @@
-{% macro render_item_table(items, form_data) %}
-<table role="grid">
+{# item_table.html #}
+<table>
     <thead>
         <tr>
-            {% for key in items[0] %}
-                {% if key == 'description' %}
-                    <th>Input Field</th>
-                {% else %}
-                    <th>{{ key|capitalize }}</th>
-                {% endif %}
+            {% for header in header_columns %}
+                <th>{{ header }}</th>
             {% endfor %}
-            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for item in items %}
         <tr>
-            {% for key, value in item.items() %}
-                {% if key == 'description' %}
-                    <td>
-                        <input type="text" name="item_{{ item.id }}_description" value="{{ form_data.get('item_' ~ item.id ~ '_description', value) }}">
-                    </td>
-                {% else %}
-                    <td>{{ value }}</td>
-                {% endif %}
+            {% for header in header_columns %}
+                <td>
+                    {% set value = item.get(header) %}
+                    {% if header == 'kurs_prinyato' %}
+                        <input type="text" name="item_{{ item.id }}_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_kurs_prinyato', value) }}">
+                    {% elif header == 'kurs_vydano' %}
+                        <input type="text" name="item_{{ item.id }}_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_kurs_vydano', value) }}">
+                    {% elif header == 'nomer_punkta' %}
+                        {% if value %}
+                            <a href="/{{ value }}/">{{ value }}</a>
+                        {% endif %}
+                    {% else %}
+                        {{ value }}
+                    {% endif %}
+                </td>
             {% endfor %}
-            <td><a href="/{{ item.id }}/" role="button" class="outline">View Details</a></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-{% endmacro %}
 
-{{ render_item_table(items, form_data) }}
+<script>
+    // Assuming you pass the header_columns to the template
+    const header_columns = [{% for header in header_columns %}"{{ header }}"{% if not loop.last %},{% endif %}{% endfor %}];
+</script>

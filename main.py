@@ -13,7 +13,10 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.datastructures import FormData
 import json
 from loguru import logger
-
+from datetime import datetime, timedelta
+import pytz
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+header_columns = {"kurs_prinyato", "kurs_vydano", "nomer_punkta", "Сумма принято (3h, прогноз)", "Сумма выдано (3h, прогноз)", "Финансовый результат", "Курс перекрытия"}
 DATABASE_URL = "sqlite:///./elasticity_model.db"
 engine = create_engine(DATABASE_URL, echo=True)
 
@@ -53,15 +56,39 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+
+class Prediction(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    model_id: int
+    inserted_datetime: datetime = Field(default_factory=lambda: pytz.timezone('Europe/Minsk').localize(datetime.now()))
+    nomer_punkta: int
+    hour: int
+    kurs: float
+    t: float
+    y: float
+
+def insert_predictions( db: Session, dataloads = List[Dict],):
+    """Inserts a new item into the database."""
+    predictions = [Prediction(**prediction_kwargs) for prediction_kwargs in dataloads]
+    db.add_all(predictions)
+    db.commit()
+
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 items = [
-    {"id": 1, "name": "Item A", "description": "Description for Item A"},
-    {"id": 2, "name": "Item B", "description": "Description for Item B"},
-    {"id": 3, "name": "Item C", "description": "Description for Item C"},
+    {"id": 700, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 700, "Сумма принято (3h, прогноз)": 4500, "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425, "Конкуренты":{"Альфа-Банк":{"Покупка": 3.41, "Продажа": 3.44}, "ВТБ-Банк":{"Покупка": 3.411, "Продажа": 3.439}}},
+    {"id": 701, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 701, "Сумма принято (3h, прогноз)": 4500,
+     "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425,
+     "Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
+                    "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
+    {"id": 702, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 702, "Сумма принято (3h, прогноз)": 4500,
+     "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425,
+     "Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
+                    "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
+
 ]
 
 
@@ -153,11 +180,13 @@ async def list_view(
     form_data = request.session.get("form_data")
     if form_data:
         form_data = json.loads(form_data)
+        logger.critical(form_data)
     else:
         form_data = {}
+
     logger.debug(items)
     return templates.TemplateResponse("list.html", {"request": request, "items": items, "current_user": current_user,
-                                                    "form_data": form_data})
+                                                    "form_data": form_data, "header_columns":header_columns})
 
 
 @app.get("/{item_id}/", response_class=HTMLResponse)
@@ -187,7 +216,7 @@ async def detail_view(
     detail_view_items = [item for item in items if item.get('id') == item_id]
     return templates.TemplateResponse("detail.html",
                                       {"request": request, "items": detail_view_items, "placeholder_value": placeholder_value,
-                                       "current_user": current_user, "form_data": form_data})
+                                       "current_user": current_user, "form_data": form_data, "header_columns":header_columns})
 
 
 @app.post("/calculate")
