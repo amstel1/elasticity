@@ -2,25 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width-device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ item.name }} Details</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 </head>
 <body>
     <main class="container">
         <nav>
-            <ul>
-                <li><a href="/">Back to List</a></li>
-                <li><strong>{{ item.name }} Details</strong></li>
-            </ul>
-            <ul>
-                {% if request.session.get("access_token") %}
-                <li>
-                    <form action="/logout" method="post">
-                        <button type="submit">Logout</button>
-                    </form>
-                </li>
+            <div>
+                {% if current_user %}
+                <span>Logged in as {{ current_user.user_name }}</span>
+                <a href="/logout" role="button">Logout</a>
                 {% endif %}
+            </div>
+            <ul>
+                {% if current_user.id == 369 %}
+                    <li><a href="/">Back to List</a></li>
+                {% endif %}
+                <li><strong>{{ item.name }} Details</strong></li>
             </ul>
         </nav>
         <div class="grid">

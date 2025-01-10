@@ -70,9 +70,14 @@ async def get_current_user(
     user = db.exec(select(User).where(User.user_name == token)).first()
     return user
 
-async def get_current_active_user(current_user: Annotated[Optional[User], Depends(get_current_user)]):
+async def get_current_active_user(request: Request, current_user: Annotated[Optional[User], Depends(get_current_user)]):
     if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        request.session["redirect_url"] = str(request.url)
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            headers={"Location": "/login"},
+            detail="Not authenticated",
+        )
     if current_user.disabled:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
@@ -81,7 +86,7 @@ async def get_current_active_user(current_user: Annotated[Optional[User], Depend
 async def login_form(request: Request, error: Optional[str] = None):
     return templates.TemplateResponse("login.html", {"request": request, "error": error})
 
-@app.post("/token", response_class=HTMLResponse)
+@app.post("/token", response_class=RedirectResponse)
 async def login_process(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -89,11 +94,17 @@ async def login_process(
 ):
     user = db.exec(select(User).where(User.user_name == form_data.username)).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
-        return await login_form(request, error="Incorrect username or password")
-    request.session["access_token"] = user.user_name
-    return RedirectResponse(url=request.session.get("redirect_url", "/"), status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/login?error=Incorrect username or password", status_code=status.HTTP_303_SEE_OTHER)
 
-@app.post("/logout")
+    request.session["access_token"] = user.user_name
+    redirect_url = request.session.pop("redirect_url", None)
+    if redirect_url:
+        return RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+    else:
+        # Redirect to the list view if no initial URL is stored
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.get("/logout")
 async def logout(request: Request):
     request.session.pop("access_token", None)
     return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
@@ -110,22 +121,6 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return {"message": "User registered successfully"}
 
-async def check_authentication(request: Request, db: Session = Depends(get_db)):
-    if request.url.path not in ["/login", "/token", "/register"] and not request.session.get("access_token"):
-        request.session["redirect_url"] = str(request.url)
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
-    elif request.session.get("access_token"):
-        user = await get_current_user(request, db)
-        if not user:
-            request.session.pop("access_token", None)
-            request.session["redirect_url"] = str(request.url)
-            raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
-
-@app.middleware("http")
-async def authentication_middleware(request: Request, call_next):
-    response = await call_next(request)
-    return response
-
 @app.get("/", response_class=HTMLResponse)
 async def list_view(
         request: Request,
@@ -133,11 +128,13 @@ async def list_view(
         db: Session = Depends(get_db),
 ):
     if not (current_user.user_name.lower().startswith('ca')):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to access this page.",
-        )
-    return templates.TemplateResponse("list.html", {"request": request, "items": items})
+        return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
+        # raise HTTPException(
+        #     status_code=status.HTTP_403_FORBIDDEN,
+        #     detail="You do not have permission to access this page.",
+        # )
+
+    return templates.TemplateResponse("list.html", {"request": request, "items": items, "current_user": current_user})
 
 @app.get("/{item_id}/", response_class=HTMLResponse)
 async def detail_view(
@@ -146,18 +143,18 @@ async def detail_view(
         current_user: Annotated[User, Depends(get_current_active_user)],
         db: Session = Depends(get_db),
 ):
+    if item_id == 369:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
     item = next((item for item in items if item["id"] == item_id), None)
     if not item:
         return HTMLResponse(content="Item not found", status_code=404)
 
     if (current_user.id != item_id) and not (current_user.user_name.lower().startswith('ca')):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to access this detail page.",
-        )
+        return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
 
     placeholder_value = "This is a placeholder value."
-    return templates.TemplateResponse("detail.html", {"request": request, "item": item, "placeholder_value": placeholder_value})
+    return templates.TemplateResponse("detail.html", {"request": request, "item": item, "placeholder_value": placeholder_value, "current_user": current_user})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
