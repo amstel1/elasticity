@@ -199,24 +199,29 @@ async def detail_view(
     if item_id == 369:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-    # item = next((item for item in items if item["id"] == item_id), None)
-    # if not item:
-    #     return HTMLResponse(content="Item not found", status_code=404)
-
     if (current_user.id != item_id) and not (current_user.user_name.lower().startswith('ca')):
         return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
 
-    placeholder_value = "This is a placeholder value."
+
 
     form_data = request.session.get("form_data")
     if form_data:
-        form_data = json.loads(form_data)
+        try:
+            form_data = json.loads(form_data)
+            logger.debug(f"Form data in detail view for item {item_id}: {form_data}")
+            kurs_prinyato_key = f"item_{item_id}_kurs_prinyato"
+            kurs_vydano_key = f"item_{item_id}_kurs_vydano"
+            logger.debug(f"Checking for key '{kurs_prinyato_key}': {form_data.get(kurs_prinyato_key)}")
+            logger.debug(f"Checking for key '{kurs_vydano_key}': {form_data.get(kurs_vydano_key)}")
+        except json.JSONDecodeError:
+            form_data = {}
     else:
         form_data = {}
-    detail_view_items = [item for item in items if item.get('id') == item_id]
+
+    detail_view_items = [item for item in items if item.get('nomer_punkta') == item_id]
     return templates.TemplateResponse("detail.html",
-                                      {"request": request, "items": detail_view_items, "placeholder_value": placeholder_value,
-                                       "current_user": current_user, "form_data": form_data, "header_columns":header_columns})
+                                      {"request": request, "items": detail_view_items,
+                                       "current_user": current_user, "form_data": form_data, "header_columns": header_columns})
 
 
 @app.post("/calculate")
