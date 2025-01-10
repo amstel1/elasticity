@@ -12,6 +12,15 @@
             <ul>
                 <li><strong>Login</strong></li>
             </ul>
+            <ul>
+                {% if request.session.get("access_token") %}
+                <li>
+                    <form action="/logout" method="post">
+                        <button type="submit">Logout</button>
+                    </form>
+                </li>
+                {% endif %}
+            </ul>
         </nav>
         <article>
             {% if error %}

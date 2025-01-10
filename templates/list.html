@@ -3,37 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Item List</title>
+    <title>Login</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 </head>
 <body>
     <main class="container">
         <nav>
             <ul>
-                <li><strong>Item List</strong></li>
+                <li><strong>Login</strong></li>
+            </ul>
+            <ul>
+                {% if request.session.get("access_token") %}
+                <li>
+                    <form action="/logout" method="post">
+                        <button type="submit">Logout</button>
+                    </form>
+                </li>
+                {% endif %}
             </ul>
         </nav>
-        <table role="grid">
-            <thead>
-                <tr>
-                    {% for key in items[0] %}
-                    <th>{{ key|capitalize }}</th>
-                    {% endfor %}
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr>
-                    {% for value in item.values() %}
-                    <td>{{ value }}</td>
-                    {% endfor %}
-                    <td><a href="/{{ item.id }}/" role="button" class="outline">View Details</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="button">Add New Item</button>
+        <article>
+            {% if error %}
+            <div class="alert alert-error" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
+            <form action="/token" method="post">
+                <div class="grid">
+                    <label for="username">
+                        Username
+                        <input type="text" id="username" name="username" required>
+                    </label>
+                    <label for="password">
+                        Password
+                        <input type="password" id="password" name="password" required>
+                    </label>
+                </div>
+                <button type="submit" class="contrast">Login</button>
+            </form>
+            <p>Don't have an account? <a href="/register">Register</a></p>
+        </article>
     </main>
 </body>
 </html>

@@ -3,7 +3,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from typing import List, Dict, Annotated, Optional
-import requests
 import uvicorn
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -20,7 +19,7 @@ def create_db_and_tables():
 
 PASSWORD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="/token")
-SECRET_KEY = "your_secret_key" # Change this in production
+SECRET_KEY = "your_secret_key"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return PASSWORD_CONTEXT.verify(plain_password, hashed_password)

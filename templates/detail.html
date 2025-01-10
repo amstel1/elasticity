@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width-device-width, initial-scale=1.0">
     <title>{{ item.name }} Details</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 </head>
@@ -12,6 +12,15 @@
             <ul>
                 <li><a href="/">Back to List</a></li>
                 <li><strong>{{ item.name }} Details</strong></li>
+            </ul>
+            <ul>
+                {% if request.session.get("access_token") %}
+                <li>
+                    <form action="/logout" method="post">
+                        <button type="submit">Logout</button>
+                    </form>
+                </li>
+                {% endif %}
             </ul>
         </nav>
         <div class="grid">
