@@ -1,5 +1,3 @@
-from http.client import responses
-
 import pandas as pd
 from fastapi import FastAPI, Request, Form, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -22,7 +20,13 @@ import pytz
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 import httpx
 from typing import Literal
+from pathlib import Path
+from fastapi_sessions.backends.implementations import InMemoryBackend
+from fastapi_sessions.frontends.implementations import SessionCookie
+import time
 
+session_files_dir = Path("./session_data")
+session_files_dir.mkdir(parents=True, exist_ok=True)
 
 global cached_features
 cached_features = {'timestamp': None, 'features': {}}
@@ -43,6 +47,7 @@ def create_db_and_tables():
 PASSWORD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="/token")
 SECRET_KEY = "your_secret_key"
+
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -88,8 +93,11 @@ def insert_predictions( db: Session, dataloads = List[Dict],):
     db.add_all(predictions)
     db.commit()
 
+backend = InMemoryBackend()
+
+
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, )
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -162,8 +170,6 @@ async def get_features():
         return response.json()
 
 async def get_predictions(features,):
-    # Simulate making predictions using an external API
-    # Replace this with your actual API call
     async with httpx.AsyncClient() as client:
         logger.warning(features)
         response = await client.post("http://localhost:8002/predict", json={"features": features,})
@@ -174,10 +180,6 @@ async def get_predictions(features,):
 
 @app.get("/favicon.ico")
 async def favicon():
-    # Option 1: Serve a favicon file from your static directory
-    # return FileResponse("static/favicon.ico")
-
-    # Option 2: Return a "No Content" response (if you don't have a favicon)
     return PlainTextResponse(status_code=204)
 
 @app.get("/login", response_class=HTMLResponse)
@@ -229,9 +231,8 @@ async def list_view(
         current_user: Annotated[User, Depends(get_current_active_user)],
         db: Session = Depends(get_db),
 ):
-    request.session['last_page'] = "list.html"
-    if not (current_user.user_name.lower().startswith('ca')):
-        return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
+    logger.debug(f'step 2 - {request.session.get("items")}')  # After redirect, there is no data
+    request.session['last_page'] = "/"
 
     form_data = request.session.get("form_data")
     if form_data:
@@ -240,10 +241,11 @@ async def list_view(
     else:
         form_data = {}
 
+    items = request.session.get("items", [])
+    if current_user.id != 369:
+        items = [x for x in items if int(x.get('nomer_punkta', 99999) // 100) == current_user.id]
     logger.debug(items)
-
-    request.session["items"] = items
-    return templates.TemplateResponse("list.html", {"request": request, "items": request.session.get("items"), "current_user": current_user,
+    return templates.TemplateResponse("list.html", {"request": request, "items": items, "current_user": current_user,
                                                     "form_data": form_data, "header_columns":header_columns})
 
 
@@ -254,14 +256,7 @@ async def detail_view(
         current_user: Annotated[User, Depends(get_current_active_user)],
         db: Session = Depends(get_db),
 ):
-    request.session['last_page'] = "list.html"
-    if item_id == 369:
-        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-
-    if (current_user.id != item_id) and not (current_user.user_name.lower().startswith('ca')):
-        return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
-
-
+    request.session['last_page'] = f"/{item_id}/"
 
     form_data = request.session.get("form_data")
     if form_data:
@@ -277,18 +272,17 @@ async def detail_view(
     else:
         form_data = {}
 
+    items = request.session.get("items", [])
     detail_view_items = [item for item in items if item.get('nomer_punkta') == item_id]
-
-    request.session["items"] = detail_view_items
     return templates.TemplateResponse("detail.html",
-                                      {"request": request, "items": request.session.get("items"),
+                                      {"request": request, "items": detail_view_items,
                                        "current_user": current_user, "form_data": form_data, "header_columns": header_columns})
 
 
 @app.post("/calculate")
 async def calculate(request: Request, current_user: Annotated[User, Depends(get_current_active_user)], mode: Literal['fast', 'slow', 'explain'] = Form(...)):
     form_data = await request.form()
-    old_form_data_str = request.session.get("form_data", "{}")  # Get as string, default to empty JSON string
+    old_form_data_str = request.session.get("form_data", "{}")
     logger.debug(f"Old form data (str): {old_form_data_str}, Type: {type(old_form_data_str)}")
 
     try:
@@ -300,53 +294,42 @@ async def calculate(request: Request, current_user: Annotated[User, Depends(get_
     form_data = dict(form_data)
     logger.debug(f"New form data: {form_data}, Type: {type(form_data)}")
 
-    # Update old_form_data with the new form_data, overwriting only existing keys
     old_form_data.update(form_data)
 
     request.session["form_data"] = json.dumps(old_form_data)
 
-    # Extract form data based on request type and URL
     referer = request.headers.get("referer")
     if referer.endswith("/"):
-        # Process list view form data
         print("List view form data dict:", old_form_data)  # Log the merged data
     elif referer.split("/")[-2].isdigit():
         item_id = int(referer.split("/")[-2])
-        # Process details view form data
         print(f"Details view form data dict (item_id: {item_id}):", old_form_data)  # Log the merged data
     else:
         print("referer", referer)
 
-    # get cache
+
     timestamp = cached_features.get('timestamp')
-    if timestamp and datetime.now() - pd.Timestamp(timestamp).to_pydatetime() < datetime.timedelta(hours=2, minutes=55):
-        # cache is valid
+    if timestamp and datetime.now() - pd.Timestamp(timestamp).to_pydatetime() < timedelta(hours=2, minutes=55):
         features = cached_features.get('features')
     else:
         features = None
-    # pass slow, fast, explain
     if mode == 'slow' or (not features):
-        # if request.session.get('features') is not valid, generate: input_x = request.get(url='localhost:8002/features') to get data and put it into cache
         features = await get_features()
         cached_features['features'] = features
         cached_features['timestamp'] = str(datetime.now())
         logger.debug(f'slow calculation: len - {len(features)}, timestamp - {cached_features["timestamp"]}')
 
     predictions = await get_predictions(features)
+    predictions = items
+
     if mode == 'explain':
-        # shap explainer
         pass
     logger.info(f'predictions - {predictions}, {request.session.get("last_page")}')
 
-    # Redirect back to the page where the form was submitted
-    return templates.TemplateResponse("list.html",
-                                      context={
-                                          "request": request,
-                                           "items": request.session.get("items"),  # pass predictions instead
-                                           "current_user": current_user,
-                                           "form_data": form_data,
-                                           "header_columns": header_columns
-                                      })
+    request.session["items"] = predictions
+    time.sleep(1)
+    logger.warning(f'step 1 - {request.session["items"]}')  # I do see the data gete
+    return RedirectResponse(url=request.session.get("last_page", '/'), status_code=303)
 
 
 if __name__ == "__main__":
