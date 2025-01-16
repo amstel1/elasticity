@@ -6,13 +6,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f8f9fa; /* Light background */
+            border-bottom: 1px solid #eee; /* Subtle border */
+            border-collapse: collapse;
+            width: 95%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem; /* Space between elements */
+        }
+
+        .nav-user-info {
+            font-size: 0.9rem;
+            color: #6c757d; /* Muted text color */
+        }
+
+        .nav-logout-button {
+            --pico-color: #dc3545; /* Red color for logout */
+            --pico-contrast: #fff;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
     <main class="container">
-        <nav>
-            <ul>
-                <li><strong>Login</strong></li>
-            </ul>
+        <nav class="nav-container">
+            <div class="nav-left">
+                <span class="nav-title">Login</span>
+            </div>
         </nav>
         <article>
             {% if error %}

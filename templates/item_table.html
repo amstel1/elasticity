@@ -58,7 +58,7 @@
     <tbody>
         {% for item in items %}
         <tr>
-            <td>{{ item.nomer_punkta }}</td>
+            <td><a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}</td>
             {% for header in header_columns %}
                 {% if '__' in header %}
                     {% set parts = header.split('__') %}
