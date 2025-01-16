@@ -1,3 +1,4 @@
+{% from 'image.html' import static_image %}
 {# details.html #}
 <!DOCTYPE html>
 <html lang="en">
@@ -79,7 +80,13 @@
                 {% include 'item_table.html' %}
             </div>
         </div>
-        {% include 'competitors.html' %}
+         <div>
+            {% include 'competitors.html' %}
+        </div>
+        <div style="margin-right: 20px; text-align: center;">
+            {{ static_image(src='/static/explained.png', alt='SHAP') }}
+        </div>
+       
         <form method="post" action="/calculate" class="calculate-form">
             <input type="hidden" name="mode" value="explain">
             <button type="submit">Calculate</button>

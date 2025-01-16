@@ -1,25 +1,30 @@
 {# competitors.html #}
-{% for item in items %}
-    {% for key, value in item.items() %}
-        {% if '__Конкуренты' in key %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Банк</th>
-                    <th>Покупка</th>
-                    <th>Продажа</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for bank_name, bank_data in value.items() %}
-                    <tr>
-                        <td>{{ bank_name }}</td>
-                        <td>{{ bank_data['Покупка'] }}</td>
-                        <td>{{ bank_data['Продажа'] }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
+<div style="display: flex;">
+    {% for item in items %}
+        {% for key, value in item.items() %}
+            {% if '__Конкуренты' in key %}
+                <div style="margin-right: 20px; text-align: center;"> <!-- Add margin for spacing -->
+                    <strong>{{ key.split("__")[0] | upper }}</strong>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Банк</th>
+                                <th>Покупка</th>
+                                <th>Продажа</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bank_name, bank_data in value.items() %}
+                                <tr>
+                                    <td>{{ bank_name }}</td>
+                                    <td>{{ bank_data['Покупка'] }}</td>
+                                    <td>{{ bank_data['Продажа'] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        {% endfor %}
     {% endfor %}
-{% endfor %}
+</div>

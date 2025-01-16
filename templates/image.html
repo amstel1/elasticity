@@ -1,0 +1,8 @@
+{% macro static_image(src, alt, width=None, height=None, class='', style='') %}
+  <img src="{{ src }}" alt="{{ alt }}"
+       {% if width %}width="{{ width }}"{% endif %}
+       {% if height %}height="{{ height }}"{% endif %}
+       {% if class %}class="{{ class }}"{% endif %}
+       {% if style %}style="{{ style }}"{% endif %}
+  >
+{% endmacro %}
