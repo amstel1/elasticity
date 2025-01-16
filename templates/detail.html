@@ -6,32 +6,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Details</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f8f9fa; /* Light background */
+            border-bottom: 1px solid #eee; /* Subtle border */
+            border-collapse: collapse;
+            width: 95%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem; /* Space between elements */
+        }
+
+        .nav-user-info {
+            font-size: 0.9rem;
+            color: #6c757d; /* Muted text color */
+        }
+
+        .nav-logout-button {
+            --pico-color: #dc3545; /* Red color for logout */
+            --pico-contrast: #fff;
+            font-size: 0.9rem;
+        }
+
+        .calculate-form {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem; /* Add some space above the button */
+            border-collapse: collapse;
+            width: 9%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
 </head>
 <body>
-    <main class="container">
-        <nav>
-            <div>
-                {% if current_user %}
-                <span>Logged in as {{ current_user.user_name }}</span>
-                <a href="/logout" role="button">Logout</a>
-                {% endif %}
+    <main>
+        <nav class="nav-container">
+            <div class="nav-left">
+                <a href="/" role="button" class="nav-logout-button" style="margin-right: 1rem;">Back to List</a>
+                <span class="nav-title">Details</span>
             </div>
-            <ul>
-                {% if current_user.id == 369 %}
-                    <li><a href="/">Back to List</a></li>
-                {% endif %}
-            </ul>
+            {% if current_user %}
+            <div class="nav-right">
+                <span class="nav-user-info">Logged in as {{ current_user.user_name }}</span>
+                <a href="/logout" role="button" class="nav-logout-button">Logout</a>
+            </div>
+            {% endif %}
         </nav>
-        <div class="grid">
+
+        <div>
             <div>
                 {% include 'item_table.html' %}
-                <form method="post" action="/calculate">
+                <form method="post" action="/calculate" class="calculate-form">
                     <input type="hidden" name="mode" value="fast">
-                    <button type="submit">Fast Calculate</button>
-                </form>
-                <form method="post" action="/calculate">
-                    <input type="hidden" name="mode" value="slow">
-                    <button type="submit">Slow Calculate</button>
+                    <button type="submit">Calculate</button>
                 </form>
             </div>
         </div>

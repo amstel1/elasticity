@@ -17,9 +17,10 @@
     }
     th, td {
         border: 1px solid #ddd;
-        padding: 8px;
+        padding: 2px; /* Reduced padding for lower rows */
         text-align: left;
         font-size: 14px; /* Reduced font size */
+        vertical-align: middle; /* Default vertical alignment, good for most text */
     }
     th {
         background-color: #f2f2f2;
@@ -28,6 +29,11 @@
         width: 100%;
         box-sizing: border-box;
         font-size: 14px; /* Reduced font size for input fields as well */
+        padding: 1px; /* Remove default input padding */
+        margin: 1px; /* Remove default input margin */
+        height: 36px; /* Adjust height for better vertical centering */
+        display: flex; /* Enable flexbox for vertical centering */
+        align-items: center; /* Center content vertically */
     }
 </style>
 
@@ -58,7 +64,8 @@
     <tbody>
         {% for item in items %}
         <tr>
-            <td><a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}</td>
+            <td>{% if items|length > 1%}<a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}{% else %}{{
+                item.nomer_punkta }}{% endif %}</td>
             {% for header in header_columns %}
                 {% if '__' in header %}
                     {% set parts = header.split('__') %}
