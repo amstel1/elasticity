@@ -1,3 +1,5 @@
+from http.client import responses
+
 from fastapi import FastAPI, Request, Form, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -16,7 +18,13 @@ from loguru import logger
 from datetime import datetime, timedelta
 import pytz
 from sqlmodel import Field, Session, SQLModel, create_engine, select
-header_columns = {"kurs_prinyato", "kurs_vydano", "nomer_punkta", "Сумма принято (3h, прогноз)", "Сумма выдано (3h, прогноз)", "Финансовый результат", "Курс перекрытия"}
+import httpx
+
+header_columns = ("nomer_punkta",
+    "usd__kurs_prinyato", "usd__kurs_vydano", "usd__Сумма принято (3h, прогноз)", "usd__Сумма выдано (3h, прогноз)", "usd__Финансовый результат", "usd__Курс перекрытия",
+    "eur__kurs_prinyato", "eur__kurs_vydano", "eur__Сумма принято (3h, прогноз)", "eur__Сумма выдано (3h, прогноз)", "eur__Финансовый результат", "eur__Курс перекрытия",
+    "rub__kurs_prinyato", "rub__kurs_vydano",  "rub__Сумма принято (3h, прогноз)", "rub__Сумма выдано (3h, прогноз)", "rub__Финансовый результат", "rub__Курс перекрытия",
+                  )
 DATABASE_URL = "sqlite:///./elasticity_model.db"
 engine = create_engine(DATABASE_URL, echo=True)
 
@@ -56,10 +64,10 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
-
 class Prediction(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     model_id: int
+    model_name: str
     inserted_datetime: datetime = Field(default_factory=lambda: pytz.timezone('Europe/Minsk').localize(datetime.now()))
     nomer_punkta: int
     hour: int
@@ -79,15 +87,17 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 items = [
-    {"id": 700, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 700, "Сумма принято (3h, прогноз)": 4500, "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425, "Конкуренты":{"Альфа-Банк":{"Покупка": 3.41, "Продажа": 3.44}, "ВТБ-Банк":{"Покупка": 3.411, "Продажа": 3.439}}},
-    {"id": 701, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 701, "Сумма принято (3h, прогноз)": 4500,
-     "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425,
-     "Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                    "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
-    {"id": 702, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 702, "Сумма принято (3h, прогноз)": 4500,
-     "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425,
-     "Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                    "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
+    {"id": 700, "nomer_punkta": 700, "usd__kurs_prinyato": 3.40, "usd__kurs_vydano": 3.45, "usd__Сумма принято (3h, прогноз)": 4500, "usd__Сумма выдано (3h, прогноз)": 5000, "usd__Финансовый результат": 237.5, "usd__Курс перекрытия": 3.425, "usd__Конкуренты":{"Альфа-Банк":{"Покупка": 3.41, "Продажа": 3.44}, "ВТБ-Банк":{"Покупка": 3.411, "Продажа": 3.439}},
+     "eur__kurs_prinyato": 3.40, "eur__kurs_vydano": 3.45,  "eur__Сумма принято (3h, прогноз)": 4500, "eur__Сумма выдано (3h, прогноз)": 5000, "eur__Финансовый результат": 237.5, "eur__Курс перекрытия": 3.425, "eur__Конкуренты":{"Альфа-Банк":{"Покупка": 3.41, "Продажа": 3.44}, "ВТБ-Банк":{"Покупка": 3.411, "Продажа": 3.439}},
+    "rub__kurs_prinyato": 3.40, "rub__kurs_vydano": 3.45,  "rub__Сумма принято (3h, прогноз)": 4500, "rub__Сумма выдано (3h, прогноз)": 5000, "rub__Финансовый результат": 237.5, "rub__Курс перекрытия": 3.425, "rub__Конкуренты":{"Альфа-Банк":{"Покупка": 3.41, "Продажа": 3.44}, "ВТБ-Банк":{"Покупка": 3.411, "Продажа": 3.439}}}
+    # {"id": 701, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 701, "Сумма принято (3h, прогноз)": 4500,
+    #  "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425,
+    #  "Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
+    #                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
+    # {"id": 702, "kurs_prinyato": 3.40, "kurs_vydano": 3.45, "nomer_punkta": 702, "Сумма принято (3h, прогноз)": 4500,
+    #  "Сумма выдано (3h, прогноз)": 5000, "Финансовый результат": 237.5, "Курс перекрытия": 3.425,
+    #  "Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
+    #                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
 
 ]
 
@@ -124,6 +134,20 @@ async def get_current_active_user(request: Request, current_user: Annotated[Opti
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
 
+async def get_features():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://localhost:8002/features")
+        response.raise_for_status()
+        return response.json()
+
+async def get_predictions(features,):
+    # Simulate making predictions using an external API
+    # Replace this with your actual API call
+    async with httpx.AsyncClient() as client:
+        logger.warning(features)
+        response = await client.post("http://localhost:8002/predict", json={"features": features,})
+        response.raise_for_status()
+        return response.json()
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request, error: Optional[str] = None):
@@ -174,6 +198,7 @@ async def list_view(
         current_user: Annotated[User, Depends(get_current_active_user)],
         db: Session = Depends(get_db),
 ):
+    request.session['last_page'] = "list.html"
     if not (current_user.user_name.lower().startswith('ca')):
         return RedirectResponse(url=f"/{current_user.id}", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -185,7 +210,9 @@ async def list_view(
         form_data = {}
 
     logger.debug(items)
-    return templates.TemplateResponse("list.html", {"request": request, "items": items, "current_user": current_user,
+
+    request.session["items"] = items
+    return templates.TemplateResponse("list.html", {"request": request, "items": request.session.get("items"), "current_user": current_user,
                                                     "form_data": form_data, "header_columns":header_columns})
 
 
@@ -196,6 +223,7 @@ async def detail_view(
         current_user: Annotated[User, Depends(get_current_active_user)],
         db: Session = Depends(get_db),
 ):
+    request.session['last_page'] = "list.html"
     if item_id == 369:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -219,13 +247,15 @@ async def detail_view(
         form_data = {}
 
     detail_view_items = [item for item in items if item.get('nomer_punkta') == item_id]
+
+    request.session["items"] = detail_view_items
     return templates.TemplateResponse("detail.html",
-                                      {"request": request, "items": detail_view_items,
+                                      {"request": request, "items": request.session.get("items"),
                                        "current_user": current_user, "form_data": form_data, "header_columns": header_columns})
 
 
 @app.post("/calculate")
-async def calculate(request: Request, current_user: Annotated[User, Depends(get_current_active_user)]):
+async def calculate(request: Request, current_user: Annotated[User, Depends(get_current_active_user)], mode: str = Form(...)):
     form_data = await request.form()
     old_form_data_str = request.session.get("form_data", "{}")  # Get as string, default to empty JSON string
     logger.debug(f"Old form data (str): {old_form_data_str}, Type: {type(old_form_data_str)}")
@@ -256,8 +286,27 @@ async def calculate(request: Request, current_user: Annotated[User, Depends(get_
     else:
         print("referer", referer)
 
+    # if request.session.get('features') is valid, use it
+    if mode == 'fast':
+        features = request.session.get('features', None)
+    if mode == 'slow' or (not features):
+        # if request.session.get('features') is not valid, generate: input_x = request.get(url='localhost:8002/features') to get data and put it into cache
+        features = await get_features()
+        logger.debug(f'len - {len(features)}')
+        request.session['features'] = features
+
+    predictions = await get_predictions(features)
+    logger.info(f'predictions - {predictions}, {request.session.get("last_page")}')
+
     # Redirect back to the page where the form was submitted
-    return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse("list.html",
+                                      context={
+                                          "request": request,
+                                           "items": request.session.get("items"),  # pass predictions instead
+                                           "current_user": current_user,
+                                           "form_data": form_data,
+                                           "header_columns": header_columns
+                                      })
 
 
 if __name__ == "__main__":

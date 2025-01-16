@@ -1,37 +1,100 @@
-{# item_table.html #}
+{# new_item_table.html #}
+<style>
+    .usd-group {
+        background-color: #e0f7fa; /* Light cyan */
+    }
+    .eur-group {
+        background-color: #fff9c4; /* Light yellow */
+    }
+    .rub-group {
+        background-color: #f0f4c3; /* Light lime */
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+    }
+</style>
+
 <table>
     <thead>
         <tr>
+            <th>Номер Пункта</th>
             {% for header in header_columns %}
-                <th>{{ header }}</th>
+                {% if '__' in header %}
+                    {% set parts = header.split('__') %}
+                    {% set currency = parts[0] %}
+                    {% set field_type = parts[1] %}
+                    {% if field_type in ['kurs_prinyato', 'kurs_vydano'] %}
+                        {% if currency == 'usd' %}
+                            <th class="usd-group">{% if field_type == 'kurs_prinyato' %}USD Принято{% else %}USD Выдано{% endif %}</th>
+                        {% elif currency == 'eur' %}
+                            <th class="eur-group">{% if field_type == 'kurs_prinyato' %}EUR Принято{% else %}EUR Выдано{% endif %}</th>
+                        {% elif currency == 'rub' %}
+                            <th class="rub-group">{% if field_type == 'kurs_prinyato' %}RUB Принято{% else %}RUB Выдано{% endif %}</th>
+                        {% endif %}
+                    {% else %}
+                        <th>{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
+                    {% endif %}
+                {% endif %}
             {% endfor %}
         </tr>
     </thead>
     <tbody>
         {% for item in items %}
         <tr>
+            <td>{{ item.nomer_punkta }}</td>
             {% for header in header_columns %}
-                <td>
-                    {% set value = item.get(header) %}
-                    {% if header == 'kurs_prinyato' %}
-                        <input type="text" name="item_{{ item.id }}_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_kurs_prinyato', value) }}">
-                    {% elif header == 'kurs_vydano' %}
-                        <input type="text" name="item_{{ item.id }}_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_kurs_vydano', value) }}">
-                    {% elif header == 'nomer_punkta' %}
-                        {% if value %}
-                            <a href="/{{ value }}/">{{ value }}</a>
+                {% if '__' in header %}
+                    {% set parts = header.split('__') %}
+                    {% set currency = parts[0] %}
+                    {% set field_type = parts[1] %}
+                    {% set value_attr = currency + '_' + field_type %}
+                    {% if field_type == 'kurs_prinyato' %}
+                        {% if currency == 'usd' %}
+                            <td class="usd-group">
+                                <input type="text" name="item_{{ item.id }}_usd_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_usd_kurs_prinyato', item[value_attr]|default('')) }}">
+                            </td>
+                        {% elif currency == 'eur' %}
+                            <td class="eur-group">
+                                <input type="text" name="item_{{ item.id }}_eur_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_eur_kurs_prinyato', item[value_attr]|default('')) }}">
+                            </td>
+                        {% elif currency == 'rub' %}
+                            <td class="rub-group">
+                                <input type="text" name="item_{{ item.id }}_rub_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_rub_kurs_prinyato', item[value_attr]|default('')) }}">
+                            </td>
+                        {% endif %}
+                    {% elif field_type == 'kurs_vydano' %}
+                        {% if currency == 'usd' %}
+                            <td class="usd-group">
+                                <input type="text" name="item_{{ item.id }}_usd_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_usd_kurs_vydano', item[value_attr]|default('')) }}">
+                            </td>
+                        {% elif currency == 'eur' %}
+                            <td class="eur-group">
+                                <input type="text" name="item_{{ item.id }}_eur_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_eur_kurs_vydano', item[value_attr]|default('')) }}">
+                            </td>
+                        {% elif currency == 'rub' %}
+                            <td class="rub-group">
+                                <input type="text" name="item_{{ item.id }}_rub_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_rub_kurs_vydano', item[value_attr]|default('')) }}">
+                            </td>
                         {% endif %}
                     {% else %}
-                        {{ value }}
+                        <td>{{ item[value_attr]|default('') }}</td>
                     {% endif %}
-                </td>
+                {% endif %}
             {% endfor %}
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
-<script>
-    // Assuming you pass the header_columns to the template
-    const header_columns = [{% for header in header_columns %}"{{ header }}"{% if not loop.last %},{% endif %}{% endfor %}];
-</script>

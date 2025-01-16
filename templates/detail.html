@@ -24,12 +24,16 @@
         </nav>
         <div class="grid">
             <div>
+                {% include 'item_table.html' %}
                 <form method="post" action="/calculate">
-                    {% include 'item_table.html' %}
-                    <button type="submit">Calculate</button>
+                    <input type="hidden" name="mode" value="fast">
+                    <button type="submit">Fast Calculate</button>
+                </form>
+                <form method="post" action="/calculate">
+                    <input type="hidden" name="mode" value="slow">
+                    <button type="submit">Slow Calculate</button>
                 </form>
             </div>
-            
         </div>
     </main>
 </body>
