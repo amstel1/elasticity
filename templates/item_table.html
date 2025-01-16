@@ -10,13 +10,16 @@
         background-color: #f0f4c3; /* Light lime */
     }
     table {
-        width: 100%;
+        width: 95%;
         border-collapse: collapse;
+        margin-left: auto;
+        margin-right: auto;
     }
     th, td {
         border: 1px solid #ddd;
         padding: 8px;
         text-align: left;
+        font-size: 14px; /* Reduced font size */
     }
     th {
         background-color: #f2f2f2;
@@ -24,6 +27,7 @@
     input[type="text"] {
         width: 100%;
         box-sizing: border-box;
+        font-size: 14px; /* Reduced font size for input fields as well */
     }
 </style>
 
@@ -45,7 +49,7 @@
                             <th class="rub-group">{% if field_type == 'kurs_prinyato' %}RUB Принято{% else %}RUB Выдано{% endif %}</th>
                         {% endif %}
                     {% else %}
-                        <th>{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
+                        <th class="{{ currency }}-group">{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
                     {% endif %}
                 {% endif %}
             {% endfor %}
@@ -90,7 +94,13 @@
                             </td>
                         {% endif %}
                     {% else %}
-                        <td>{{ item[value_attr]|default('') }}</td>
+                        {% if currency == 'usd' %}
+                            <td class="usd-group" style="font-size: 14px;">{{ item[value_attr]|default('') }}</td>
+                        {% elif currency == 'eur' %}
+                            <td class="eur-group" style="font-size: 14px;">{{ item[value_attr]|default('') }}</td>
+                        {% elif currency == 'rub' %}
+                            <td class="rub-group" style="font-size: 14px;">{{ item[value_attr]|default('') }}</td>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
             {% endfor %}

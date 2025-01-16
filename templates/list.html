@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 </head>
 <body>
-    <main class="container">
+    <main>  <!-- Removed the 'container' class -->
         <nav>
             <div>
                 {% if current_user %}
@@ -20,7 +20,7 @@
                 <li><strong>Item List</strong></li>
             </ul>
         </nav>
-        <div class="grid">
+        <div>
             <div>
                 {% include 'item_table.html' %}
                 <form method="post" action="/calculate">
