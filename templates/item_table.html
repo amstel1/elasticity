@@ -1,4 +1,4 @@
-{# new_item_table.html #}
+{# item_table.html #}
 <style>
     .usd-group {
         background-color: #e0f7fa; /* Light cyan */
@@ -14,6 +14,7 @@
         border-collapse: collapse;
         margin-left: auto;
         margin-right: auto;
+        table-layout: fixed; /* Add this to make column widths consistent */
     }
     th, td {
         border: 1px solid #ddd;
@@ -21,9 +22,15 @@
         text-align: left;
         font-size: 14px; /* Reduced font size */
         vertical-align: middle; /* Default vertical alignment, good for most text */
+        width: calc(100% / {{ header_columns|length + 1 }}); /* Distribute width equally */
+        overflow: hidden; /* Prevent content from overflowing */
+        text-overflow: ellipsis; /* Indicate overflow with an ellipsis */
+        /* word-break: break-all;  Remove this to prevent breaking words */
     }
     th {
         background-color: #f2f2f2;
+        white-space: normal; /* Enable text wrapping for headers */
+        word-break: normal; /* Ensure words are not broken */
     }
     input[type="text"] {
         width: 100%;
@@ -40,7 +47,7 @@
 <table>
     <thead>
         <tr>
-            <th>Номер Пункта</th>
+            <th style="width: calc(100% / {{ header_columns|length + 1 }})">Номер Пункта</th>
             {% for header in header_columns %}
                 {% if '__' in header %}
                     {% set parts = header.split('__') %}
@@ -48,14 +55,14 @@
                     {% set field_type = parts[1] %}
                     {% if field_type in ['kurs_prinyato', 'kurs_vydano'] %}
                         {% if currency == 'usd' %}
-                            <th class="usd-group">{% if field_type == 'kurs_prinyato' %}USD Принято{% else %}USD Выдано{% endif %}</th>
+                            <th class="usd-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{% if field_type == 'kurs_prinyato' %}USD Принято{% else %}USD Выдано{% endif %}</th>
                         {% elif currency == 'eur' %}
-                            <th class="eur-group">{% if field_type == 'kurs_prinyato' %}EUR Принято{% else %}EUR Выдано{% endif %}</th>
+                            <th class="eur-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{% if field_type == 'kurs_prinyato' %}EUR Принято{% else %}EUR Выдано{% endif %}</th>
                         {% elif currency == 'rub' %}
-                            <th class="rub-group">{% if field_type == 'kurs_prinyato' %}RUB Принято{% else %}RUB Выдано{% endif %}</th>
+                            <th class="rub-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{% if field_type == 'kurs_prinyato' %}RUB Принято{% else %}RUB Выдано{% endif %}</th>
                         {% endif %}
                     {% else %}
-                        <th class="{{ currency }}-group">{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
+                        <th class="{{ currency }}-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
                     {% endif %}
                 {% endif %}
             {% endfor %}
@@ -64,7 +71,7 @@
     <tbody>
         {% for item in items %}
         <tr>
-            <td>{% if items|length > 1%}<a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}{% else %}{{
+            <td style="text-align: center;">{% if items|length > 1%}<a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}{% else %}{{
                 item.nomer_punkta }}{% endif %}</td>
             {% for header in header_columns %}
                 {% if '__' in header %}

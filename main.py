@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from typing import List, Dict, Annotated, Optional
 import uvicorn
 from fastapi import Depends
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
@@ -162,6 +163,16 @@ async def get_predictions(features,):
         response = await client.post("http://localhost:8002/predict", json={"features": features,})
         response.raise_for_status()
         return response.json()
+
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    # Option 1: Serve a favicon file from your static directory
+    # return FileResponse("static/favicon.ico")
+
+    # Option 2: Return a "No Content" response (if you don't have a favicon)
+    return PlainTextResponse(status_code=204)
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request, error: Optional[str] = None):
