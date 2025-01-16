@@ -77,12 +77,13 @@
         <div>
             <div>
                 {% include 'item_table.html' %}
-                <form method="post" action="/calculate" class="calculate-form">
-                    <input type="hidden" name="mode" value="fast">
-                    <button type="submit">Calculate</button>
-                </form>
             </div>
         </div>
+        {% include 'competitors.html' %}
+        <form method="post" action="/calculate" class="calculate-form">
+            <input type="hidden" name="mode" value="explain">
+            <button type="submit">Calculate</button>
+        </form>
     </main>
 </body>
 </html>

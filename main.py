@@ -1,5 +1,6 @@
 from http.client import responses
 
+import pandas as pd
 from fastapi import FastAPI, Request, Form, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -20,6 +21,11 @@ from datetime import datetime, timedelta
 import pytz
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 import httpx
+from typing import Literal
+
+
+global cached_features
+cached_features = {'timestamp': None, 'features': {}}
 
 header_columns = ("nomer_punkta",
     "usd__kurs_prinyato", "usd__Сумма принято", "usd__Курс перекрытия",  "usd__Сумма выдано", "usd__kurs_vydano", "usd__Финансовый результат",
@@ -280,7 +286,7 @@ async def detail_view(
 
 
 @app.post("/calculate")
-async def calculate(request: Request, current_user: Annotated[User, Depends(get_current_active_user)], mode: str = Form(...)):
+async def calculate(request: Request, current_user: Annotated[User, Depends(get_current_active_user)], mode: Literal['fast', 'slow', 'explain'] = Form(...)):
     form_data = await request.form()
     old_form_data_str = request.session.get("form_data", "{}")  # Get as string, default to empty JSON string
     logger.debug(f"Old form data (str): {old_form_data_str}, Type: {type(old_form_data_str)}")
@@ -311,16 +317,25 @@ async def calculate(request: Request, current_user: Annotated[User, Depends(get_
     else:
         print("referer", referer)
 
-    # if request.session.get('features') is valid, use it
-    if mode == 'fast':
-        features = request.session.get('features', None)
+    # get cache
+    timestamp = cached_features.get('timestamp')
+    if timestamp and datetime.now() - pd.Timestamp(timestamp).to_pydatetime() < datetime.timedelta(hours=2, minutes=55):
+        # cache is valid
+        features = cached_features.get('features')
+    else:
+        features = None
+    # pass slow, fast, explain
     if mode == 'slow' or (not features):
         # if request.session.get('features') is not valid, generate: input_x = request.get(url='localhost:8002/features') to get data and put it into cache
         features = await get_features()
-        logger.debug(f'len - {len(features)}')
-        request.session['features'] = features
+        cached_features['features'] = features
+        cached_features['timestamp'] = str(datetime.now())
+        logger.debug(f'slow calculation: len - {len(features)}, timestamp - {cached_features["timestamp"]}')
 
     predictions = await get_predictions(features)
+    if mode == 'explain':
+        # shap explainer
+        pass
     logger.info(f'predictions - {predictions}, {request.session.get("last_page")}')
 
     # Redirect back to the page where the form was submitted
