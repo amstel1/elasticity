@@ -1,3 +1,12 @@
+from linecache import cache
+# feature -> dict cache = common for all
+# predictions -> request.session = just for this person - to be rendered correctly what curr rate they set.
+# TODO: check caching for features
+# TODO: form validation
+# TODO: redirect problem
+# TODO: correct data rendering
+# TODO: explainer service
+
 import pandas as pd
 from fastapi import FastAPI, Request, Form, HTTPException, status, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, PlainTextResponse
@@ -146,8 +155,9 @@ async def get_current_active_user(
     return current_user
 
 # --- API Interaction Functions ---
-async def fetch_features() -> Dict:
+async def fetch_features(form_data:Dict = {}) -> Dict:
     """Fetches features from the external API, using a cache."""
+    # use form_data to get user input
     timestamp = cached_features.get('timestamp')
     if timestamp and datetime.now() - pd.Timestamp(timestamp).to_pydatetime() < timedelta(hours=2, minutes=55):
         return cached_features['features']
@@ -161,7 +171,7 @@ async def fetch_features() -> Dict:
         logger.debug(f'Fetched features from API. Cache timestamp: {cached_features["timestamp"]}')
         return features
 
-async def fetch_predictions_from_api() -> List[Dict]:
+async def fetch_predictions_from_api(features: Dict = {}) -> List[Dict]:
     """Fetches predictions from the prediction API."""
     # logger.debug(f"Sending features to prediction API: {features}")
     async with httpx.AsyncClient() as client:
@@ -171,15 +181,15 @@ async def fetch_predictions_from_api() -> List[Dict]:
 
         predictions = [
             {"id": 700, "nomer_punkta": 700, "usd__kurs_prinyato": 3.40, "usd__kurs_vydano": 3.45,
-             "usd__Сумма принято": 4500, "usd__Сумма выдано": 5000, "usd__Финансовый результат": 237.5,
+             "usd__Сумма принято": 4501, "usd__Сумма выдано": 5001, "usd__Финансовый результат": 237.1,
              "usd__Курс перекрытия": 3.425, "usd__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
                                                                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}},
-             "eur__kurs_prinyato": 3.40, "eur__kurs_vydano": 3.45, "eur__Сумма принято": 4500,
-             "eur__Сумма выдано": 5000, "eur__Финансовый результат": 237.5, "eur__Курс перекрытия": 3.425,
+             "eur__kurs_prinyato": 3.40, "eur__kurs_vydano": 3.45, "eur__Сумма принято": 4502,
+             "eur__Сумма выдано": 5002, "eur__Финансовый результат": 237.2, "eur__Курс перекрытия": 3.425,
              "eur__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
                                  "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}},
-             "rub__kurs_prinyato": 3.40, "rub__kurs_vydano": 3.45, "rub__Сумма принято": 4500,
-             "rub__Сумма выдано": 5000, "rub__Финансовый результат": 237.5, "rub__Курс перекрытия": 3.425,
+             "rub__kurs_prinyato": 3.40, "rub__kurs_vydano": 3.45, "rub__Сумма принято": 4503,
+             "rub__Сумма выдано": 5003, "rub__Финансовый результат": 237.3, "rub__Курс перекрытия": 3.425,
              "rub__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
                                  "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
 
@@ -247,21 +257,25 @@ async def list_view(
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     request.session['last_page'] = ROOT_URL
-    form_data = request.session.get("form_data", {})
-    if isinstance(form_data, str):
-        form_data = json.loads(form_data)
+    # form_data = request.session.get("form_data", {})
+    # logger.info(f'initial form data -- {len(form_data)} -- {type(form_data)}')
+    # if isinstance(form_data, str):
+    #     form_data = json.loads(form_data)
 
     items_data = request.session.get("items", [])
     if not items_data:
         # init load
         items_data = await fetch_predictions_from_api()
         request.session["items"] = items_data
-    logger.info(f'list view: {len(items_data)}, {type(items_data)}, {items_data}')
+
+    # logger.info(f'form_data, list view: {len(form_data)}, {type(form_data)}, {form_data}')
+    logger.info(f'items_data, list view: {len(items_data)}, {type(items_data)}, {items_data}')
+
     if current_user.id != 369:
         items_data = [item for item in items_data if int(item.get('nomer_punkta', 99999) // 100) == current_user.id]
 
     return templates.TemplateResponse("list.html", {"request": request, "items": items_data, "current_user": current_user,
-                                                    "form_data": form_data, "header_columns": HEADER_COLUMNS})
+                                                     "header_columns": HEADER_COLUMNS})
 
 @app.get("/{item_id}/", response_class=HTMLResponse, name="detail_view")
 async def detail_view(
@@ -274,7 +288,6 @@ async def detail_view(
     if isinstance(form_data, str):
         try:
             form_data = json.loads(form_data)
-            # logger.debug(f"Form data in detail view for item {item_id}: {form_data}")
         except json.JSONDecodeError:
             form_data = {}
 
@@ -287,7 +300,10 @@ async def detail_view(
     detail_view_items = [item for item in items_data if item.get('nomer_punkta') == item_id]
     return templates.TemplateResponse("detail.html",
                                       {"request": request, "items": detail_view_items,
-                                       "current_user": current_user, "form_data": form_data, "header_columns": HEADER_COLUMNS})
+                                       "current_user": current_user, "header_columns": HEADER_COLUMNS})
+
+class InputForm(BaseModel):
+
 
 @app.post("/calculate", name="calculate")
 async def calculate(
@@ -295,32 +311,20 @@ async def calculate(
     current_user: Annotated[User, Depends(get_current_active_user)],
     mode: Literal['fast', 'slow', 'explain'] = Form(...)
 ):
-    form_data_new = await request.form()
-    old_form_data_str = request.session.get("form_data", "{}")
-
-    try:
-        old_form_data = json.loads(old_form_data_str)
-    except json.JSONDecodeError:
-        # logger.warning("Invalid JSON in old_form_data, resetting.")
-        old_form_data = {}
-
-    updated_form_data = old_form_data.copy()
-    updated_form_data.update(form_data_new)
-    request.session["form_data"] = json.dumps(updated_form_data)
-
-    # logger.debug(f"Merged form data: {updated_form_data}")
+    form_data = dict(await request.form())
+    logger.info(f'calc form data -- {form_data}-- {len(form_data)} -- {type(form_data)}')
 
     features = None
     if mode == 'slow':
-        features = await fetch_features()
+        features = await fetch_features(form_data)
     elif mode == 'fast':
-        features = await fetch_features()
+        features = await fetch_features(form_data)
     elif cached_features.get('features'):
         features = cached_features['features']
     else:
-        features = await fetch_features()
+        features = await fetch_features(form_data)
 
-    predictions = await fetch_predictions_from_api()
+    predictions = await fetch_predictions_from_api(features)
 
     if mode == 'explain':
         pass  # Add explain logic here

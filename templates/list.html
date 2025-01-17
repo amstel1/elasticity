@@ -73,17 +73,15 @@
             {% endif %}
         </nav>
         <div>
-            <div>
-                {% include 'item_table.html' %}
-                <form method="post" action="/calculate" class="calculate-form">
-                    <input type="hidden" name="mode" value="fast">
-                    <button type="submit">Calculate</button>
-                </form>
-<!--                <form method="post" action="/calculate">-->
-<!--                    <input type="hidden" name="mode" value="slow">-->
-<!--                    <button type="submit">Slow Calculate</button>-->
-<!--                </form>-->
-            </div>
+            <form method="post" action="/calculate">
+                <div>
+                    {% include 'item_table.html' %}
+                    <div class="calculate-form">
+                        <input type="hidden" name="mode" value="fast">
+                        <button type="submit">Calculate</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </main>
 </body>

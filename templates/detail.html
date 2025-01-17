@@ -1,5 +1,5 @@
-{% from 'image.html' import static_image %}
 {# details.html #}
+{% from 'image.html' import static_image %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,23 +74,21 @@
             </div>
             {% endif %}
         </nav>
-
-        <div>
+        <form method="post" action="/calculate">
             <div>
                 {% include 'item_table.html' %}
             </div>
-        </div>
+            <div style="margin-right: 20px; text-align: center;">
+                {{ static_image(src='/static/explained.png', alt='SHAP') }}
+            </div>
+            <div class="calculate-form">
+                <input type="hidden" name="mode" value="explain">
+                <button type="submit">Calculate</button>
+            </div>
+        </form>
          <div>
             {% include 'competitors.html' %}
         </div>
-        <div style="margin-right: 20px; text-align: center;">
-            {{ static_image(src='/static/explained.png', alt='SHAP') }}
-        </div>
-       
-        <form method="post" action="/calculate" class="calculate-form">
-            <input type="hidden" name="mode" value="explain">
-            <button type="submit">Calculate</button>
-        </form>
     </main>
 </body>
 </html>

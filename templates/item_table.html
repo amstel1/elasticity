@@ -19,7 +19,7 @@
     th, td {
         border: 1px solid #ddd;
         padding: 2px; /* Reduced padding for lower rows */
-        text-align: left;
+        text-align: center;
         font-size: 14px; /* Reduced font size */
         vertical-align: middle; /* Default vertical alignment, good for most text */
         width: calc(100% / {{ header_columns|length + 1 }}); /* Distribute width equally */
@@ -41,13 +41,16 @@
         height: 36px; /* Adjust height for better vertical centering */
         display: flex; /* Enable flexbox for vertical centering */
         align-items: center; /* Center content vertically */
+        text-align: center;
     }
 </style>
-
+{% set usd_text_fields = ["usd__Сумма принято", "usd__Сумма выдано" "usd__Финансовый результат", "usd__Курс перекрытия",] %}
+{% set eur_text_fields = ["eur__Сумма принято", "eur__Сумма выдано" "eur__Финансовый результат", "eur__Курс перекрытия",] %}
+{% set rub_text_fields = ["rub__Сумма принято", "rub__Сумма выдано" "rub__Финансовый результат", "rub__Курс перекрытия",] %}
 <table>
     <thead>
         <tr>
-            <th style="width: calc(100% / {{ header_columns|length + 1 }})">Номер Пункта</th>
+            <th>Номер Пункта</th>
             {% for header in header_columns %}
                 {% if '__' in header %}
                     {% set parts = header.split('__') %}
@@ -55,14 +58,14 @@
                     {% set field_type = parts[1] %}
                     {% if field_type in ['kurs_prinyato', 'kurs_vydano'] %}
                         {% if currency == 'usd' %}
-                            <th class="usd-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{% if field_type == 'kurs_prinyato' %}USD Принято{% else %}USD Выдано{% endif %}</th>
+                            <th class="usd-group">{% if field_type == 'kurs_prinyato' %}USD Принято{% else %}USD Выдано{% endif %}</th>
                         {% elif currency == 'eur' %}
-                            <th class="eur-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{% if field_type == 'kurs_prinyato' %}EUR Принято{% else %}EUR Выдано{% endif %}</th>
+                            <th class="eur-group">{% if field_type == 'kurs_prinyato' %}EUR Принято{% else %}EUR Выдано{% endif %}</th>
                         {% elif currency == 'rub' %}
-                            <th class="rub-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{% if field_type == 'kurs_prinyato' %}RUB Принято{% else %}RUB Выдано{% endif %}</th>
+                            <th class="rub-group">{% if field_type == 'kurs_prinyato' %}RUB Принято{% else %}RUB Выдано{% endif %}</th>
                         {% endif %}
                     {% else %}
-                        <th class="{{ currency }}-group" style="width: calc(100% / {{ header_columns|length + 1 }})">{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
+                        <th class="{{ currency }}-group">{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
                     {% endif %}
                 {% endif %}
             {% endfor %}
@@ -71,50 +74,52 @@
     <tbody>
         {% for item in items %}
         <tr>
-            <td style="text-align: center;">{% if items|length > 1%}<a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}{% else %}{{
+            <td>{% if items|length > 1%}<a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}</a>{% else %}{{
                 item.nomer_punkta }}{% endif %}</td>
             {% for header in header_columns %}
                 {% if '__' in header %}
                     {% set parts = header.split('__') %}
                     {% set currency = parts[0] %}
                     {% set field_type = parts[1] %}
-                    {% set value_attr = currency + '_' + field_type %}
+                    
                     {% if field_type == 'kurs_prinyato' %}
                         {% if currency == 'usd' %}
                             <td class="usd-group">
-                                <input type="text" name="item_{{ item.id }}_usd_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_usd_kurs_prinyato', item[value_attr]|default('')) }}">
+                                <input type="text" name="item_{{ item.id }}_usd_kurs_prinyato" value="{{ item.usd__kurs_prinyato|default('') }}">
                             </td>
                         {% elif currency == 'eur' %}
                             <td class="eur-group">
-                                <input type="text" name="item_{{ item.id }}_eur_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_eur_kurs_prinyato', item[value_attr]|default('')) }}">
+                                <input type="text" name="item_{{ item.id }}_eur_kurs_prinyato" value="{{ item.eur__kurs_prinyato|default('') }}">
                             </td>
                         {% elif currency == 'rub' %}
                             <td class="rub-group">
-                                <input type="text" name="item_{{ item.id }}_rub_kurs_prinyato" value="{{ form_data.get('item_' ~ item.id ~ '_rub_kurs_prinyato', item[value_attr]|default('')) }}">
+                                <input type="text" name="item_{{ item.id }}_rub_kurs_prinyato" value="{{ item.rub__kurs_prinyato|default('') }}">
                             </td>
                         {% endif %}
                     {% elif field_type == 'kurs_vydano' %}
                         {% if currency == 'usd' %}
                             <td class="usd-group">
-                                <input type="text" name="item_{{ item.id }}_usd_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_usd_kurs_vydano', item[value_attr]|default('')) }}">
+                                <input type="text" name="item_{{ item.id }}_usd_kurs_vydano" value="{{ item.usd__kurs_vydano|default('') }}">
                             </td>
                         {% elif currency == 'eur' %}
                             <td class="eur-group">
-                                <input type="text" name="item_{{ item.id }}_eur_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_eur_kurs_vydano', item[value_attr]|default('')) }}">
+                                <input type="text" name="item_{{ item.id }}_eur_kurs_vydano" value="{{ item.eur__kurs_vydano|default('') }}">
                             </td>
                         {% elif currency == 'rub' %}
                             <td class="rub-group">
-                                <input type="text" name="item_{{ item.id }}_rub_kurs_vydano" value="{{ form_data.get('item_' ~ item.id ~ '_rub_kurs_vydano', item[value_attr]|default('')) }}">
+                                <input type="text" name="item_{{ item.id }}_rub_kurs_vydano" value="{{ item.rub__kurs_vydano|default('') }}">
                             </td>
                         {% endif %}
                     {% else %}
-                        {% if currency == 'usd' %}
-                            <td class="usd-group" style="font-size: 14px;">{{ item[value_attr]|default('') }}</td>
-                        {% elif currency == 'eur' %}
-                            <td class="eur-group" style="font-size: 14px;">{{ item[value_attr]|default('') }}</td>
-                        {% elif currency == 'rub' %}
-                            <td class="rub-group" style="font-size: 14px;">{{ item[value_attr]|default('') }}</td>
-                        {% endif %}
+                        {% for k, v in item.items() %}
+                            {% if currency == 'usd' and header == k  %}
+                                <td class="usd-group">{{ v|default('') }}</td>
+                            {% elif currency == 'eur' and header == k  %}
+                                <td class="eur-group">{{ v|default('') }}</td>
+                            {% elif currency == 'rub' and header == k  %}
+                                <td class="rub-group">{{ v|default('') }}</td>
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
                 {% endif %}
             {% endfor %}
