@@ -164,6 +164,49 @@
             }
         });
 
+        // Validate kurs_prinyato < kurs_vydano for each currency in each row
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            // USD validation
+            const usd_prinyato_input = row.querySelector('input[name^="item_"][name$="_usd_kurs_prinyato"]');
+            const usd_vydano_input = row.querySelector('input[name^="item_"][name$="_usd_kurs_vydano"]');
+            if (usd_prinyato_input && usd_vydano_input) {
+                const usd_prinyato = parseFloat(usd_prinyato_input.value);
+                const usd_vydano = parseFloat(usd_vydano_input.value);
+                const errorSpan = document.getElementById(`error_${usd_prinyato_input.name}`);
+                if (!isNaN(usd_prinyato) && !isNaN(usd_vydano) && usd_prinyato >= usd_vydano) {
+                    isValid = false;
+                    errorSpan.textContent = 'Принято должно быть меньше Выдано.';
+                }
+            }
+
+            // EUR validation
+            const eur_prinyato_input = row.querySelector('input[name^="item_"][name$="_eur_kurs_prinyato"]');
+            const eur_vydano_input = row.querySelector('input[name^="item_"][name$="_eur_kurs_vydano"]');
+            if (eur_prinyato_input && eur_vydano_input) {
+                const eur_prinyato = parseFloat(eur_prinyato_input.value);
+                const eur_vydano = parseFloat(eur_vydano_input.value);
+                const errorSpan = document.getElementById(`error_${eur_prinyato_input.name}`);
+                if (!isNaN(eur_prinyato) && !isNaN(eur_vydano) && eur_prinyato >= eur_vydano) {
+                    isValid = false;
+                    errorSpan.textContent = 'Принято должно быть меньше Выдано.';
+                }
+            }
+
+            // RUB validation
+            const rub_prinyato_input = row.querySelector('input[name^="item_"][name$="_rub_kurs_prinyato"]');
+            const rub_vydano_input = row.querySelector('input[name^="item_"][name$="_rub_kurs_vydano"]');
+            if (rub_prinyato_input && rub_vydano_input) {
+                const rub_prinyato = parseFloat(rub_prinyato_input.value);
+                const rub_vydano = parseFloat(rub_vydano_input.value);
+                const errorSpan = document.getElementById(`error_${rub_prinyato_input.name}`);
+                if (!isNaN(rub_prinyato) && !isNaN(rub_vydano) && rub_prinyato >= rub_vydano) {
+                    isValid = false;
+                    errorSpan.textContent = 'Принято должно быть меньше Выдано.';
+                }
+            }
+        });
+
         if (!isValid) {
             event.preventDefault(); // Prevent form submission if validation fails
         }
