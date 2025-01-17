@@ -2,10 +2,10 @@ from linecache import cache
 # feature -> dict cache = common for all
 # predictions -> request.session = just for this person - to be rendered correctly what curr rate they set.
 # TODO: check caching for features
-# TODO: form validation
-# TODO: redirect problem
-# TODO: correct data rendering
-# TODO: explainer service
+# TODO: form validation +
+# TODO: redirect problem +
+# TODO: correct data rendering +
+# TODO: explainer service =
 
 import pandas as pd
 from fastapi import FastAPI, Request, Form, HTTPException, status, Depends
@@ -251,12 +251,14 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return {"message": "User registered successfully"}
 
+
+
 @app.get(ROOT_URL, response_class=HTMLResponse, name="list_view")
 async def list_view(
         request: Request,
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    request.session['last_page'] = ROOT_URL
+
     # form_data = request.session.get("form_data", {})
     # logger.info(f'initial form data -- {len(form_data)} -- {type(form_data)}')
     # if isinstance(form_data, str):
@@ -283,7 +285,7 @@ async def detail_view(
         item_id: int,
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    request.session['last_page'] = f"/{item_id}/"
+
     form_data = request.session.get("form_data", {})
     if isinstance(form_data, str):
         try:
@@ -303,7 +305,14 @@ async def detail_view(
                                        "current_user": current_user, "header_columns": HEADER_COLUMNS})
 
 
-
+def validate_form_data(form_data: Dict):
+    validate_form_data = {}
+    for k, v in form_data.items():
+        if k.startswith('item_'):
+            validate_form_data[k] = float(v)
+        else:
+            validate_form_data[k] = v
+    return validate_form_data
 
 @app.post("/calculate", name="calculate")
 async def calculate(
@@ -311,7 +320,10 @@ async def calculate(
     current_user: Annotated[User, Depends(get_current_active_user)],
     mode: Literal['fast', 'slow', 'explain'] = Form(...)
 ):
+
     form_data = dict(await request.form())
+    form_data = validate_form_data(form_data)
+
     logger.info(f'calc form data -- {form_data}-- {len(form_data)} -- {type(form_data)}')
 
     features = None
@@ -331,9 +343,10 @@ async def calculate(
 
     request.session["items"] = json.dumps(predictions)
     logger.info(f'calc: {request.session["items"] }')
-    time.sleep(1)  # Simulate processing time
-    logger.info(f'Predictions updated in session. Redirecting to: {request.session.get("last_page", ROOT_URL)}')
-    return RedirectResponse(url=request.session.get("last_page", ROOT_URL), status_code=status.HTTP_303_SEE_OTHER)
+    referer = request.headers.get("referer")
+    if not referer:
+        referer = ROOT_URL
+    return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
 
 # --- Main Entry Point ---
 if __name__ == "__main__":
