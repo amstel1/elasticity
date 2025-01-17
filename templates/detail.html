@@ -90,5 +90,111 @@
             {% include 'competitors.html' %}
         </div>
     </main>
+<script>
+    function validateForm(event) {
+        let isValid = true;
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(msg => msg.textContent = ''); // Clear previous errors
+
+        const numberFields = document.querySelectorAll('input[type="text"]');
+        numberFields.forEach(input => {
+            const value = input.value.trim();
+            const errorSpan = document.getElementById(`error_${input.name}`);
+
+            if (!value) {
+                isValid = false;
+                errorSpan.textContent = 'Поле не должно быть пустым.';
+            } else if (isNaN(parseInt(value)) || parseInt(value) != parseFloat(value)) {
+                isValid = false;
+                errorSpan.textContent = 'Введите целое число.';
+            } else if (parseInt(value) <= 0) {
+                isValid = false;
+                errorSpan.textContent = 'Число должно быть больше 0.';
+            }
+        });
+
+        {% for item in items %}
+        // EUR Range Validation
+        const eurKursPrinyato = document.querySelector('input[name="item_{{ item.id }}_eur_kurs_prinyato"]');
+        const eurKursPerekrytiya = document.querySelector('td.eur-group:nth-child(' + (header_columns.index('eur__Курс перекрытия') + 2) + ')');
+        const eurKursVydano = document.querySelector('input[name="item_{{ item.id }}_eur_kurs_vydano"]');
+
+        if (eurKursPrinyato && eurKursPerekrytiya && eurKursVydano) {
+            const prinyato = parseInt(eurKursPrinyato.value.trim()) || 0;
+            const perekrytiyaText = eurKursPerekrytiya.textContent.trim();
+            const perekrytiya = parseInt(perekrytiyaText) || 0;
+            const vydano = parseInt(eurKursVydano.value.trim()) || 0;
+            const errorPrinyato = document.getElementById(`error_item_{{ item.id }}_eur_kurs_prinyato`);
+            const errorVydano = document.getElementById(`error_item_{{ item.id }}_eur_kurs_vydano`);
+
+            if (eurKursPrinyato.value.trim() && eurKursVydano.value.trim() && !(vydano >= perekrytiya && perekrytiya >= prinyato)) {
+                isValid = false;
+                if (errorPrinyato.textContent === '') {
+                    errorPrinyato.textContent = 'Неверный диапазон курсов.';
+                }
+                if (errorVydano.textContent === '') {
+                    errorVydano.textContent = 'Неверный диапазон курсов.';
+                }
+            }
+        }
+
+        // USD Range Validation
+        const usdKursPrinyato = document.querySelector('input[name="item_{{ item.id }}_usd_kurs_prinyato"]');
+        const usdKursPerekrytiya = document.querySelector('td.usd-group:nth-child(' + (header_columns.index('usd__Курс перекрытия') + 2) + ')');
+        const usdKursVydano = document.querySelector('input[name="item_{{ item.id }}_usd_kurs_vydano"]');
+
+        if (usdKursPrinyato && usdKursPerekrytiya && usdKursVydano) {
+            const prinyato = parseInt(usdKursPrinyato.value.trim()) || 0;
+            const perekrytiyaText = usdKursPerekrytiya.textContent.trim();
+            const perekrytiya = parseInt(perekrytiyaText) || 0;
+            const vydano = parseInt(usdKursVydano.value.trim()) || 0;
+            const errorPrinyato = document.getElementById(`error_item_{{ item.id }}_usd_kurs_prinyato`);
+            const errorVydano = document.getElementById(`error_item_{{ item.id }}_usd_kurs_vydano`);
+
+            if (usdKursPrinyato.value.trim() && usdKursVydano.value.trim() && !(vydano >= perekrytiya && perekrytiya >= prinyato)) {
+                isValid = false;
+                if (errorPrinyato.textContent === '') {
+                    errorPrinyato.textContent = 'Неверный диапазон курсов.';
+                }
+                if (errorVydano.textContent === '') {
+                    errorVydano.textContent = 'Неверный диапазон курсов.';
+                }
+            }
+        }
+
+        // RUB Range Validation
+        const rubKursPrinyato = document.querySelector('input[name="item_{{ item.id }}_rub_kurs_prinyato"]');
+        const rubKursPerekrytiya = document.querySelector('td.rub-group:nth-child(' + (header_columns.index('rub__Курс перекрытия') + 2) + ')');
+        const rubKursVydano = document.querySelector('input[name="item_{{ item.id }}_rub_kurs_vydano"]');
+
+        if (rubKursPrinyato && rubKursPerekrytiya && rubKursVydano) {
+            const prinyato = parseInt(rubKursPrinyato.value.trim()) || 0;
+            const perekrytiyaText = rubKursPerekrytiya.textContent.trim();
+            const perekrytiya = parseInt(perekrytiyaText) || 0;
+            const vydano = parseInt(rubKursVydano.value.trim()) || 0;
+            const errorPrinyato = document.getElementById(`error_item_{{ item.id }}_rub_kurs_prinyato`);
+            const errorVydano = document.getElementById(`error_item_{{ item.id }}_rub_kurs_vydano`);
+
+            if (rubKursPrinyato.value.trim() && rubKursVydano.value.trim() && !(vydano >= perekrytiya && perekrytiya >= prinyato)) {
+                isValid = false;
+                if (errorPrinyato.textContent === '') {
+                    errorPrinyato.textContent = 'Неверный диапазон курсов.';
+                }
+                if (errorVydano.textContent === '') {
+                    errorVydano.textContent = 'Неверный диапазон курсов.';
+                }
+            }
+        }
+        {% endfor %}
+
+        if (!isValid) {
+            event.preventDefault(); // Prevent form submission if validation fails
+        }
+    }
+
+    const form = document.querySelector('form');
+    form.addEventListener('submit', validateForm);
+</script>
 </body>
+
 </html>

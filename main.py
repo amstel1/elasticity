@@ -302,7 +302,7 @@ async def detail_view(
                                       {"request": request, "items": detail_view_items,
                                        "current_user": current_user, "header_columns": HEADER_COLUMNS})
 
-class InputForm(BaseModel):
+
 
 
 @app.post("/calculate", name="calculate")

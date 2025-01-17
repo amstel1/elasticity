@@ -43,10 +43,15 @@
         align-items: center; /* Center content vertically */
         text-align: center;
     }
+    .error-message {
+        color: red;
+        display: block; /* Make sure error messages appear */
+        margin-top: 2px;
+    }
 </style>
-{% set usd_text_fields = ["usd__Сумма принято", "usd__Сумма выдано" "usd__Финансовый результат", "usd__Курс перекрытия",] %}
-{% set eur_text_fields = ["eur__Сумма принято", "eur__Сумма выдано" "eur__Финансовый результат", "eur__Курс перекрытия",] %}
-{% set rub_text_fields = ["rub__Сумма принято", "rub__Сумма выдано" "rub__Финансовый результат", "rub__Курс перекрытия",] %}
+{% set usd_text_fields = ["usd__Сумма принято", "usd__Сумма выдано", "usd__Финансовый результат", "usd__Курс перекрытия",] %}
+{% set eur_text_fields = ["eur__Сумма принято", "eur__Сумма выдано", "eur__Финансовый результат", "eur__Курс перекрытия",] %}
+{% set rub_text_fields = ["rub__Сумма принято", "rub__Сумма выдано", "rub__Финансовый результат", "rub__Курс перекрытия",] %}
 <table>
     <thead>
         <tr>
@@ -81,33 +86,41 @@
                     {% set parts = header.split('__') %}
                     {% set currency = parts[0] %}
                     {% set field_type = parts[1] %}
-                    
+
+                    {% set input_name = 'item_%s_%s_%s' % (item.id, currency, field_type) %}
+
                     {% if field_type == 'kurs_prinyato' %}
                         {% if currency == 'usd' %}
                             <td class="usd-group">
-                                <input type="text" name="item_{{ item.id }}_usd_kurs_prinyato" value="{{ item.usd__kurs_prinyato|default('') }}">
+                                <input type="text" name="{{ input_name }}" value="{{ item.usd__kurs_prinyato|default('') }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
                             </td>
                         {% elif currency == 'eur' %}
                             <td class="eur-group">
-                                <input type="text" name="item_{{ item.id }}_eur_kurs_prinyato" value="{{ item.eur__kurs_prinyato|default('') }}">
+                                <input type="text" name="{{ input_name }}" value="{{ item.eur__kurs_prinyato|default('') }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
                             </td>
                         {% elif currency == 'rub' %}
                             <td class="rub-group">
-                                <input type="text" name="item_{{ item.id }}_rub_kurs_prinyato" value="{{ item.rub__kurs_prinyato|default('') }}">
+                                <input type="text" name="{{ input_name }}" value="{{ item.rub__kurs_prinyato|default('') }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
                             </td>
                         {% endif %}
                     {% elif field_type == 'kurs_vydano' %}
                         {% if currency == 'usd' %}
                             <td class="usd-group">
-                                <input type="text" name="item_{{ item.id }}_usd_kurs_vydano" value="{{ item.usd__kurs_vydano|default('') }}">
+                                <input type="text" name="{{ input_name }}" value="{{ item.usd__kurs_vydano|default('') }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
                             </td>
                         {% elif currency == 'eur' %}
                             <td class="eur-group">
-                                <input type="text" name="item_{{ item.id }}_eur_kurs_vydano" value="{{ item.eur__kurs_vydano|default('') }}">
+                                <input type="text" name="{{ input_name }}" value="{{ item.eur__kurs_vydano|default('') }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
                             </td>
                         {% elif currency == 'rub' %}
                             <td class="rub-group">
-                                <input type="text" name="item_{{ item.id }}_rub_kurs_vydano" value="{{ item.rub__kurs_vydano|default('') }}">
+                                <input type="text" name="{{ input_name }}" value="{{ item.rub__kurs_vydano|default('') }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
                             </td>
                         {% endif %}
                     {% else %}
@@ -127,3 +140,35 @@
         {% endfor %}
     </tbody>
 </table>
+
+<script>
+    function validateForm(event) {
+        let isValid = true;
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(msg => msg.textContent = ''); // Clear previous errors
+
+        const numberFields = document.querySelectorAll('input[type="text"]');
+        numberFields.forEach(input => {
+            const value = input.value.trim();
+            const errorSpan = document.getElementById(`error_${input.name}`);
+
+            if (!value) {
+                isValid = false;
+                errorSpan.textContent = 'Поле не должно быть пустым.';
+            } else if (isNaN(parseFloat(value)) || value.includes(',')) {
+                isValid = false;
+                errorSpan.textContent = 'Введите корректное число, используя точку как разделитель.';
+            } else if (parseFloat(value) <= 0) {
+                isValid = false;
+                errorSpan.textContent = 'Число должно быть больше 0.';
+            }
+        });
+
+        if (!isValid) {
+            event.preventDefault(); // Prevent form submission if validation fails
+        }
+    }
+
+    const form = document.querySelector('form');
+    form.addEventListener('submit', validateForm);
+</script>
