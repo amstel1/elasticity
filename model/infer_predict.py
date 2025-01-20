@@ -1,10 +1,14 @@
 from pyexpat import features
 from loguru import logger
 from fastapi import FastAPI, HTTPException
+from io import BytesIO
+from fastapi.responses import StreamingResponse, HTMLResponse
 from pydantic import BaseModel
 import pandas as pd
 import joblib  # Or pickle, depending on how you saved your model
-from typing import Dict, Any
+from typing import Dict, Any, Literal
+import pickle
+from postgres.ops import PostgresInterface
 
 # Define the data model for the input JSON
 class InputData(BaseModel):
@@ -14,6 +18,12 @@ class InputData(BaseModel):
     # feature2: int
     # feature3: str
     # ... add all your model's input features here
+
+class GetDataInput(BaseModel):
+    kind: Literal['voo', 'baseline_kurs', 'myfin']
+
+class GetFeaturesInput(BaseModel):
+    kind: Literal['voo', 'baseline_kurs', 'myfin']
 
 # Initialize the FastAPI app
 app = FastAPI()
@@ -33,15 +43,26 @@ async def load_model():
         # It's good practice to raise an exception to prevent the app from starting
         raise  # or you can implement fallback behavior
 
+@app.get("/get_data")
+async def get_data(kind: GetDataInput):
+
+    return {'vydano_usd': pd.DataFrame([{1: 'val1', 2: 'val2'}])}
+
 # Form the features: time consuming. Results are to be cached.
 # No params
-@app.get("/features")
-async def get_data():
-    # the entire logic for db querying and features calculations is here
+@app.get("/get_features")
+async def get_features(kind: GetFeaturesInput):
     # return: {task: pd.DataFrame}
     return {'vydano_usd': pd.DataFrame([{1: 'val1', 2: 'val2'}])}
 
-# Define the prediction endpoint
+@app.get("/explain")
+async def explain(operation_type: Literal['prinyato','vydano'], this_currency: Literal['usd', 'eur', 'rub']):
+    # insert here logic for creating a plot
+    image_buffer = BytesIO()
+    image.save(image_buffer, format="PNG")
+    image_buffer.seek(0)  # Reset buffer position to the beginning
+    return StreamingResponse(image_buffer, media_type="image/png")
+
 @app.post("/predict")
 async def predict(data: Dict[Any, Any]):
     logger.debug(data)
@@ -65,6 +86,10 @@ async def predict(data: Dict[Any, Any]):
     #     raise HTTPException(status_code=500, detail=f"Error during prediction: {e}")
     logger.debug("exit")
     return {'key': 'prediction_placeholder'}
+
+@app.post("/optimize_profit")
+async def optimize_profit(data: Dict[Any, Any]):
+    pass
 
 if __name__ == "__main__":
     import uvicorn
