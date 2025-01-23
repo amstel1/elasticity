@@ -1,3 +1,4 @@
+IS_DEBUG_FLAG = True
 from linecache import cache
 # feature -> dict cache = common for all
 # predictions -> request.session = just for this person - to be rendered correctly what curr rate they set.
@@ -6,7 +7,7 @@ from linecache import cache
 # TODO: redirect problem +
 # TODO: correct data rendering +
 # TODO: explainer service =
-
+import requests
 import pandas as pd
 from fastapi import FastAPI, Request, Form, HTTPException, status, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, PlainTextResponse
@@ -24,17 +25,21 @@ import json
 from loguru import logger
 from datetime import datetime, timedelta
 import pytz
-import httpx
 from pathlib import Path
 import time
+
 
 # --- Constants and Configuration ---
 SESSION_FILES_DIR = Path("./session_data")
 SESSION_FILES_DIR.mkdir(exist_ok=True)
 DATABASE_URL = "sqlite:///./elasticity_model.db"
 SECRET_KEY = "your_secret_key" # Replace with a strong, randomly generated secret key in production
-FEATURES_API_URL = "http://localhost:8002/features"
+GET_DATA_API_URL = "http://localhost:8002/get_data"
+GET_FEATURES_API_URL = "http://localhost:8002/get_features"
 PREDICT_API_URL = "http://localhost:8002/predict"
+EXPLAIN_API_URL = "http://localhost:8002/explain"
+MAKE_PROPOSED_KURSES_API_URL = "http://localhost:8002/make_proposed_kurses"
+
 LOGIN_ERROR_URL = "/login?error=Incorrect username or password"
 LOGIN_URL = "/login"
 ROOT_URL = "/"
@@ -105,18 +110,19 @@ def insert_predictions_to_db(db: Session, dataloads: List[Dict]):
 
 # --- Session Management ---
 
-middleware = [
-    Middleware(
-        SessionMiddleware,
-        secret_key=SECRET_KEY,
-        session_cookie="session",  # Changed session_cookie to cookie_name
-        https_only=False, # use https_only instead of cookie_https_only
-        max_age=60 * 60 * 24 * 7  # Added max_age for session expiry (optional)
-    )
-]
+# middleware = [
+#     Middleware(
+#         SessionMiddleware,
+#         secret_key=SECRET_KEY,
+#         session_cookie="session",  # Changed session_cookie to cookie_name
+#         https_only=False, # use https_only instead of cookie_https_only
+#         max_age=60 * 60 * 24 * 7  # Added max_age for session expiry (optional)
+#     )
+# ]
 
 # --- FastAPI App Setup ---
-app = FastAPI(middleware=middleware)
+app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="session", max_age=60 * 60 * 24 * 7, https_only=False,)
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -154,63 +160,228 @@ async def get_current_active_user(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
 
+
+def process_before_viewing(data_to_render: List):
+    '''returns: data_to_render (ready for template) '''
+    features = fetch_features(mode='fast', kind='baseline_kurs')  
+    baseline_kurs_data = features.get('baseline_kurs_data')
+    baseline_kurs_calc_datetime = features.get('baseline_kurs_calc_datetime')
+
+    features = fetch_features(mode='fast', kind='myfin')
+    myfin_data = features.get('myfin_data')
+    myfin_calc_datetime = features.get('myfin_calc_datetime')
+
+    
+    if not data_to_render:
+
+        try:
+            baseline_kurs_data
+        except Exception as e:
+            features = fetch_features(mode='fast', kind='baseline_kurs')  # todo: three kinds
+            baseline_kurs_data = features.get('baseline_kurs_data')
+            baseline_kurs_calc_datetime = features.get('baseline_kurs_calc_datetime')
+
+        try:
+            myfin_data
+        except Exception as e:
+            features = fetch_features(mode='fast', kind='myfin')
+            myfin_data = features.get('myfin_data')
+            myfin_calc_datetime = features.get('myfin_calc_datetime')
+
+
+        # init load
+        features = None
+        features = fetch_features(mode='fast', kind='voo')  # three kinds
+        logger.debug('features = calculated')
+        assert isinstance(cached_features, dict)
+        logger.debug(f'len cached_features: {len(cached_features)}')
+        
+        # logger.debug(list(f'key: {k}, len v: {len(v)}' for k,v in cached_features.items()))
+        voo_data = features.get('voo_data')
+        voo_calc_datetime = features.get('voo_calc_datetime')
+
+    # always calc data to render
+    prefinal_data = fetch_data_to_render(
+        flag_make_proposed_kurses=True,
+        voo_data=voo_data,
+        voo_calc_datetime=voo_calc_datetime,
+        baseline_kurs_data=baseline_kurs_data,
+        baseline_kurs_calc_datetime=baseline_kurs_calc_datetime,
+        myfin_data=myfin_data,
+        myfin_calc_datetime=myfin_calc_datetime,
+    )
+
+    usd_profit_df = pd.DataFrame(prefinal_data.get('data', {}).get('usd'))
+    usd_profit_df = usd_profit_df.rename(columns={
+        'nomer punkta': 'nomer_punkta',
+        'proposed kurs prinyato': 'usd__kurs_prinyato',
+        'proposed kurs vydano': 'usd__kurs_vydano',
+        'predicted volume prinyato': 'usd__Сумма принято',
+        'predicted volume vydano': 'usd__Сумма выдано',
+        'profit_saldo': 'usd__Финансовый результат', 
+        'baseline kurs prinyato': 'usd__Курс перекрытия',
+    })
+    usd_profit_df['nomer_punkta'] = usd_profit_df['nomer_punkta'].astype(int)
+    usd_profit_df['id'] = usd_profit_df['nomer_punkta']
+    usd_profit_df = usd_profit_df[['nomer_punkta', 'usd__kurs_prinyato', 'usd__kurs_vydano', 'usd__Сумма принято', 'usd__Сумма выдано', 'usd__Финансовый результат', 'usd__Курс перекрытия']]
+
+    eur_profit_df = pd.DataFrame(prefinal_data.get('data', {}).get('eur'))
+    eur_profit_df = eur_profit_df.rename(columns={
+        'nomer punkta': 'nomer_punkta',
+        'proposed kurs prinyato': 'eur__kurs_prinyato',
+        'proposed kurs vydano': 'eur__kurs_vydano',
+        'predicted volume prinyato': 'eur__Сумма принято',
+        'predicted volume vydano': 'eur__Сумма выдано',
+        'profit_saldo': 'eur__Финансовый результат', 
+        'baseline kurs prinyato': 'eur__Курс перекрытия',
+    })
+    eur_profit_df['nomer_punkta'] = eur_profit_df['nomer_punkta'].astype(int)
+    eur_profit_df['id'] = eur_profit_df['nomer_punkta']
+    eur_profit_df = eur_profit_df[['nomer_punkta', 'eur__kurs_prinyato', 'eur__kurs_vydano', 'eur__Сумма принято', 'eur__Сумма выдано', 'eur__Финансовый результат', 'eur__Курс перекрытия']]
+
+    rub_profit_df = pd.DataFrame(prefinal_data.get('data', {}).get('rub'))
+    rub_profit_df = rub_profit_df.rename(columns={
+        'nomer punkta': 'nomer_punkta',
+        'proposed kurs prinyato': 'rub__kurs_prinyato',
+        'proposed kurs vydano': 'rub__kurs_vydano',
+        'predicted volume prinyato': 'rub__Сумма принято',
+        'predicted volume vydano': 'rub__Сумма выдано',
+        'profit_saldo': 'rub__Финансовый результат', 
+        'baseline kurs prinyato': 'rub__Курс перекрытия',
+    })
+    rub_profit_df['nomer_punkta'] = rub_profit_df['nomer_punkta'].astype(int)
+    rub_profit_df['id'] = rub_profit_df['nomer_punkta']
+    rub_profit_df = rub_profit_df[['nomer_punkta', 'rub__kurs_prinyato', 'rub__kurs_vydano', 'rub__Сумма принято', 'rub__Сумма выдано', 'rub__Финансовый результат', 'rub__Курс перекрытия']]
+    
+    df = usd_profit_df.merge(eur_profit_df, 'left', on=('nomer_punkta',)).merge(rub_profit_df, 'left', on=('nomer_punkta', ))
+    df.sort_values('nomer_punkta', inplace=True)
+    data_to_render = df.to_dict(orient='records')
+    return myfin_data, data_to_render
+
+
 # --- API Interaction Functions ---
-async def fetch_features(form_data:Dict = {}) -> Dict:
+def fetch_features( mode: Literal['slow', 'fast', 'explain'], kind=Literal['voo', 'baseline_kurs', 'myfin']) -> Dict:
     """Fetches features from the external API, using a cache."""
     # use form_data to get user input
-    timestamp = cached_features.get('timestamp')
-    if timestamp and datetime.now() - pd.Timestamp(timestamp).to_pydatetime() < timedelta(hours=2, minutes=55):
-        return cached_features['features']
+    logger.info('in fetch_features')
+    data_to_fetch = {}  # same struct as cached features
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(FEATURES_API_URL)
+    # check to three kinds of cache separately
+    assert isinstance(cached_features, Dict)
+    # cached_features['voo_data']
+    # cached_features['voo_calc_datetime']
+
+    # cached_features['baseline_kurs_data']
+    # cached_features['baseline_kurs_calc_datetime']
+
+    # cached_features['myfin_data']
+    # cached_features['myfin_calc_datetime']
+    # logger.debug(f'cached_features - {cached_features}')
+    if kind == 'voo':
+        if cached_features.get('voo_calc_datetime') and datetime.now() - pd.Timestamp(cached_features.get('voo_calc_datetime')).to_pydatetime() < timedelta(hours=2, minutes=55):
+            logger.debug(f'1')
+            if cached_features.get('voo_data') and mode != 'slow':
+                logger.debug(f'2')
+                data_to_fetch['voo_data'] = cached_features.get('voo_data')
+        else:
+            # data is missing, expired or mode=slow
+            logger.info(f'before - {GET_FEATURES_API_URL}')
+            response = requests.post(url=GET_FEATURES_API_URL, json={'kind': 'voo'})  # response may be of three kinds
+            logger.info(f'after - {GET_FEATURES_API_URL}')
+            response.raise_for_status()
+            resp = response.json()
+            data_to_fetch['voo_data'] = resp.get('data')
+            cached_features['voo_data'] = resp.get('data')
+            cached_features['voo_calc_datetime'] = resp.get('calc_datetime')
+    elif kind == 'baseline_kurs':
+        logger.debug(f'3')
+        response = requests.post(url=GET_FEATURES_API_URL, json={'kind': 'baseline_kurs'})  # response may be of three kinds
         response.raise_for_status()
-        features = response.json()
-        cached_features['features'] = features
-        cached_features['timestamp'] = str(datetime.now())
-        logger.debug(f'Fetched features from API. Cache timestamp: {cached_features["timestamp"]}')
-        return features
+        resp = response.json()
+        data_to_fetch['baseline_kurs_data'] = resp.get('data')
+        cached_features['baseline_kurs_data'] = resp.get('data')
+        cached_features['baseline_kurs_calc_datetime'] = resp.get('calc_datetime')
+    elif kind == 'myfin':
+        response = requests.post(url=GET_FEATURES_API_URL, json={'kind': 'myfin'})  # response may be of three kinds
+        response.raise_for_status()
+        resp = response.json()
+        data_to_fetch['myfin_data'] = resp.get('data')
+        cached_features['myfin_data'] = resp.get('data')
+        cached_features['myfin_calc_datetime'] = resp.get('calc_datetime')
+        logger.debug(f'4')
+    return data_to_fetch
 
-async def fetch_predictions_from_api(features: Dict = {}) -> List[Dict]:
-    """Fetches predictions from the prediction API."""
-    # logger.debug(f"Sending features to prediction API: {features}")
-    async with httpx.AsyncClient() as client:
-        # response = await client.post(PREDICT_API_URL, json={"features": features})
-        # response.raise_for_status()
-        # predictions = response.json()
 
-        predictions = [
-            {"id": 700, "nomer_punkta": 700, "usd__kurs_prinyato": 3.40, "usd__kurs_vydano": 3.45,
-             "usd__Сумма принято": 4501, "usd__Сумма выдано": 5001, "usd__Финансовый результат": 237.1,
-             "usd__Курс перекрытия": 3.425, "usd__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                                                                "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}},
-             "eur__kurs_prinyato": 3.40, "eur__kurs_vydano": 3.45, "eur__Сумма принято": 4502,
-             "eur__Сумма выдано": 5002, "eur__Финансовый результат": 237.2, "eur__Курс перекрытия": 3.425,
-             "eur__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}},
-             "rub__kurs_prinyato": 3.40, "rub__kurs_vydano": 3.45, "rub__Сумма принято": 4503,
-             "rub__Сумма выдано": 5003, "rub__Финансовый результат": 237.3, "rub__Курс перекрытия": 3.425,
-             "rub__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
+def fetch_data_to_render(
+        flag_make_proposed_kurses: bool = False,
+        voo_data=None,
+        voo_calc_datetime=None,
+        baseline_kurs_data=None,
+        baseline_kurs_calc_datetime=None,
+        myfin_data=None,
+        myfin_calc_datetime=None,
+        rate_from_form: float = -1.0,
+) -> List[Dict]:
+    '''
+    # todo: explain
 
-            {"id": 701, "nomer_punkta": 701, "usd__kurs_prinyato": 3.40, "usd__kurs_vydano": 3.45,
-             "usd__Сумма принято": 4500,
-             "usd__Сумма выдано": 5000, "usd__Финансовый результат": 237.5, "usd__Курс перекрытия": 3.425,
-             "usd__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}},
-             "eur__kurs_prinyato": 3.40, "eur__kurs_vydano": 3.45, "eur__Сумма принято": 4500,
-             "eur__Сумма выдано": 5000,
-             "eur__Финансовый результат": 237.5, "eur__Курс перекрытия": 3.425,
-             "eur__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}},
-             "rub__kurs_prinyato": 3.40, "rub__kurs_vydano": 3.45, "rub__Сумма принято": 4500,
-             "rub__Сумма выдано": 5000,
-             "rub__Финансовый результат": 237.5, "rub__Курс перекрытия": 3.425,
-             "rub__Конкуренты": {"Альфа-Банк": {"Покупка": 3.41, "Продажа": 3.44},
-                                 "ВТБ-Банк": {"Покупка": 3.411, "Продажа": 3.439}}},
-        ]
-        logger.info(f"Received predictions from API: {predictions}")
-        return predictions
+    2. /predict
+    вызвать make_predictions - 3 валюты * 2 типа операций = 6 раз
+
+    3. /optimize_profit
+    для каждой из 3 валют
+    вызвать optimize_profit
+    '''
+
+    # для одной пары - ?
+
+    if flag_make_proposed_kurses:
+        baseline_kurs_data_df = pd.DataFrame(baseline_kurs_data)
+        logger.info(f'baseline_kurs_data.head(2) - {baseline_kurs_data_df.head(2)}')
+        logger.info(f'baseline_kurs_data.shape - {baseline_kurs_data_df.shape}')
+        if IS_DEBUG_FLAG:
+            baseline_kurs_data_df['this_currency'] = baseline_kurs_data_df['Валюта']
+            baseline_kurs_data_df['c_rate'] = baseline_kurs_data_df['Курс продажи']  # okay for debug
+        baseline_kurs_dict = baseline_kurs_data_df.set_index('this_currency')['c_rate'].to_dict()
+        resp = requests.post(MAKE_PROPOSED_KURSES_API_URL, json=baseline_kurs_dict)
+        proposed_kurses = resp.json()
+        # logger.debug(f'proposed_kurses: {proposed_kurses}')
+    else:
+        baseline_kurs_data_df = pd.DataFrame(baseline_kurs_data)
+        baseline_kurs_dict = baseline_kurs_data_df.set_index('this_currency')['c_rate'].to_dict()
+        assert rate_from_form > 0
+        logger.debug(f'rates_from_form - {rate_from_form}')
+        # todo: parse from rate_from_form
+        # loop by nomer_punkta
+        proposed_kurses = {
+            'prinyato_usd_': -0.01,
+            'vydano_usd': -0.01,
+        } # list of floats
+        
+
+    if flag_make_proposed_kurses:
+        logger.debug(f'voo_data - dtype: {type(voo_data)}')
+        logger.debug(f'proposed_kurses - dtype: {type(proposed_kurses)}')
+        resp = requests.post(PREDICT_API_URL, json={'voo_data': voo_data, 'proposed_kurses': proposed_kurses, 'baseline_kurs_dict': baseline_kurs_dict})  # profits_df
+        final_data = resp.json()
+        logger.info('5')
+    else:
+        # loop by nomer_punkta
+        container = []
+        # take unique nomer_punkta from data
+        for nomer_punkta in [700,701,702,703,704,706,709,711,777]:
+            logger.info(f'voo_data - dtype: {type(voo_data)}')
+            logger.info(f'baseline_kurs_dict - dtype: {type(baseline_kurs_dict)}')
+            logger.info(f'proposed_kurses - dtype: {type(proposed_kurses)}')
+            resp = requests.post(PREDICT_API_URL,
+                                 # select only for this nomer_punkta
+                                 json={'voo_data': voo_data, 'proposed_kurses': proposed_kurses, 'baseline_kurs_dict':baseline_kurs_dict})  # todo: add baseline_kurs, returns: profits_df
+            container.append(resp.json())
+        final_data = pd.concat(container)
+
+
+    return final_data
+
 
 # --- Route Handlers ---
 @app.get("/favicon.ico", include_in_schema=False)
@@ -259,25 +430,25 @@ async def list_view(
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
 
-    # form_data = request.session.get("form_data", {})
+    # form_data = request.session.get("form_data", None)
     # logger.info(f'initial form data -- {len(form_data)} -- {type(form_data)}')
     # if isinstance(form_data, str):
     #     form_data = json.loads(form_data)
 
-    items_data = request.session.get("items", [])
-    if not items_data:
-        # init load
-        items_data = await fetch_predictions_from_api()
-        request.session["items"] = items_data
 
-    # logger.info(f'form_data, list view: {len(form_data)}, {type(form_data)}, {form_data}')
-    logger.info(f'items_data, list view: {len(items_data)}, {type(items_data)}, {items_data}')
+
+    data_to_render = request.session.get("data_to_render", [])
+    _, data_to_render = process_before_viewing(data_to_render)
+    request.session["data_to_render"] = json.dumps(data_to_render)
+
+    logger.info(f'data_to_render, list view: {len(data_to_render)}, {type(data_to_render)}, {data_to_render}')
 
     if current_user.id != 369:
-        items_data = [item for item in items_data if int(item.get('nomer_punkta', 99999) // 100) == current_user.id]
+        data_to_render = [item for item in data_to_render if int(item.get('nomer_punkta', 99999) // 100) == current_user.id]
 
-    return templates.TemplateResponse("list.html", {"request": request, "items": items_data, "current_user": current_user,
+    return templates.TemplateResponse("list.html", {"request": request, "items": data_to_render, "current_user": current_user,
                                                      "header_columns": HEADER_COLUMNS})
+
 
 @app.get("/{item_id}/", response_class=HTMLResponse, name="detail_view")
 async def detail_view(
@@ -285,27 +456,33 @@ async def detail_view(
         item_id: int,
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
+    # form_data = request.session.get("form_data", None)
+    # if isinstance(form_data, str):
+    #     try:
+    #         form_data = json.loads(form_data)
+    #     except json.JSONDecodeError:
+    #         form_data = {}
 
-    form_data = request.session.get("form_data", {})
-    if isinstance(form_data, str):
-        try:
-            form_data = json.loads(form_data)
-        except json.JSONDecodeError:
-            form_data = {}
+    data_to_render = request.session.get("data_to_render", [])
+    myfin_data, data_to_render = process_before_viewing(data_to_render)
+    request.session["data_to_render"] = json.dumps(data_to_render)
 
-    items_data = request.session.get("items", [])
-    if not items_data:
-        # init load
-        items_data = await fetch_predictions_from_api()
-        request.session["items"] = items_data
-    logger.info(f'detail view: {len(items_data)}, {type(items_data)}, {items_data}')
-    detail_view_items = [item for item in items_data if item.get('nomer_punkta') == item_id]
+    logger.info(f'detail view: {len(data_to_render)}, {type(data_to_render)}, {data_to_render}')
+    detail_view_data_to_render = [x for x in data_to_render if x.get('nomer_punkta') == item_id]
+
+    detail_view_competitor = {}
+    this_point = [x for x in myfin_data if x.get('nomer_punkta') == item_id]
+    for currency in ('usd', 'eur', 'rub'):
+        currency_this_point = sorted([x for x in this_point if x.get('currency') == currency], key=lambda x: (x.get('bank_name'), x.get('ranking')))
+        detail_view_competitor[currency] = currency_this_point
+
+    a = 1
     return templates.TemplateResponse("detail.html",
-                                      {"request": request, "items": detail_view_items,
+                                      {"request": request, "items": detail_view_data_to_render, "competitors": detail_view_competitor,
                                        "current_user": current_user, "header_columns": HEADER_COLUMNS})
 
 
-def validate_form_data(form_data: Dict):
+def validate_form_data(form_data: Dict) -> Dict[str, float]:
     validate_form_data = {}
     for k, v in form_data.items():
         if k.startswith('item_'):
@@ -320,29 +497,28 @@ async def calculate(
     current_user: Annotated[User, Depends(get_current_active_user)],
     mode: Literal['fast', 'slow', 'explain'] = Form(...)
 ):
-
+    data_to_render = request.session.get("data_to_render", [])
     form_data = dict(await request.form())
     form_data = validate_form_data(form_data)
-
     logger.info(f'calc form data -- {form_data}-- {len(form_data)} -- {type(form_data)}')
 
-    features = None
-    if mode == 'slow':
-        features = await fetch_features(form_data)
-    elif mode == 'fast':
-        features = await fetch_features(form_data)
-    elif cached_features.get('features'):
-        features = cached_features['features']
+    
+    # todo: извлечь курсы пользователя из формы - здесь
+    ''' 1. здесь
+    если ввел юзер - НЕ вызывать make_proposed_kurses (flag_make_proposed_kurses=False) и присвоить proposed_kurses значение от юзера
+    иначе - вызвать make_proposed_kurses (flag_make_proposed_kurses=True) '''
+    # compare data_to_render [list[dict]] and form_data[dict[str, float]]
+
+    if not data_to_render:
+        flag_make_proposed_kurses = True
     else:
-        features = await fetch_features(form_data)
+        rates = []
 
-    predictions = await fetch_predictions_from_api(features)
 
-    if mode == 'explain':
-        pass  # Add explain logic here
+    _, data_to_render = process_before_viewing(data_to_render)
 
-    request.session["items"] = json.dumps(predictions)
-    logger.info(f'calc: {request.session["items"] }')
+    request.session["data_to_render"] = json.dumps(data_to_render)
+    logger.info(f'calc: {request.session["data_to_render"] }')
     referer = request.headers.get("referer")
     if not referer:
         referer = ROOT_URL
@@ -350,4 +526,4 @@ async def calculate(
 
 # --- Main Entry Point ---
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000,)
