@@ -22,6 +22,7 @@ import pytz
 from pathlib import Path
 import time
 import pickle
+import sys  # Import sys for getsizeof
 
 # --- Constants and Configuration ---
 SESSION_FILES_DIR = Path("./session_data")
@@ -107,7 +108,7 @@ def insert_predictions_to_db(db: Session, dataloads: List[Dict]):
 app = FastAPI()
 app.add_middleware(
     SessionMiddleware,
-    secret_key=SECRET_KEY, session_cookie="session", max_age=3600, https_only=False,)
+    secret_key=SECRET_KEY, session_cookie="session", max_age=3600, https_only=False,) # Explicitly using session_cookie, should trigger FileSessionBackend
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -136,7 +137,7 @@ async def get_current_user(
     user_name = request.session.get("access_token")
     if not user_name:
         return None
-    user = db.exec(select(User).where(User.user_name == user_name)).first()
+    user = db.exec(select(User).where(User.user_name == user.user_name)).first()
     return user
 
 async def get_current_active_user(
@@ -164,9 +165,6 @@ def process_before_viewing(rate_from_form={}, mode: Literal['fast', 'slow'] = 'f
     features = fetch_features(mode=mode, kind='myfin')
     myfin_data = features.get('myfin_data')
     myfin_calc_datetime = features.get('myfin_calc_datetime')
-
-    
-
 
     try:
         baseline_kurs_data
@@ -369,7 +367,7 @@ def fetch_data_to_render(
             'prinyato_usd_': -0.01,
             'vydano_usd': -0.01,
         } # list of floats
-        
+
 
     if flag_make_proposed_kurses:
         logger.debug(f'voo_data - dtype: {type(voo_data)}')
@@ -458,9 +456,11 @@ async def list_view(
                          'item__eur_kurs_vydano', 'item__rub_kurs_prinyato', 'item__rub_kurs_vydano']:
                 current_rates_from_form[id][name] = form_data[name]
         request.session['rates_from_form'] = current_rates_from_form
+        logger.debug(f"Session 'rates_from_form' set in list_view. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
 
     try:
         rates_from_form = request.session.get("rates_from_form", {})
+        logger.debug(f"Session 'rates_from_form' retrieved in list_view. Size: {sys.getsizeof(rates_from_form)}") # ADDED LOGGING
     except:
         rates_from_form = {}
     hello = request.session.get("hello")
@@ -475,6 +475,7 @@ async def list_view(
                 item_key = name.replace('item__', '').replace('usd_', 'usd__').replace('eur_', 'eur__').replace('rub_', 'rub__')
                 rates_from_form[id][name] = item.get(item_key)
         request.session["rates_from_form"] = rates_from_form
+        logger.debug(f"Session 'rates_from_form' (default) set in list_view. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
     logger.info(f'rates_from_form, list view: {len(rates_from_form)}, {type(rates_from_form)}, {rates_from_form}')
 
     if current_user.id != 369:
@@ -509,10 +510,12 @@ async def detail_view(
                          'item__eur_kurs_vydano', 'item__rub_kurs_prinyato', 'item__rub_kurs_vydano']:
                 current_rates_from_form[id][name] = form_data[name]
         request.session['rates_from_form'] = current_rates_from_form
+        logger.debug(f"Session 'rates_from_form' set in detail_view. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
 
     hello = request.session.get("hello")
     logger.debug(f'hello - 1: {hello}')
     rates_from_form = request.session.get("rates_from_form", {})
+    logger.debug(f"Session 'rates_from_form' retrieved in detail_view. Size: {sys.getsizeof(rates_from_form)}") # ADDED LOGGING
     myfin_data, data_to_render = process_before_viewing(rates_from_form, mode='fast')
 
 
@@ -551,6 +554,7 @@ async def calculate(
     hello = request.session.get("hello")
     logger.debug(f'hello - 2: {hello}')
     rates_from_form = request.session.get("rates_from_form", {})
+    logger.debug(f"Session 'rates_from_form' retrieved in calculate. Size: {sys.getsizeof(rates_from_form)}") # ADDED LOGGING
     form_data = dict(await request.form())
     form_data = validate_form_data(form_data)
     logger.info(f'calc form data -- {form_data}-- {len(form_data)} -- {type(form_data)}')
@@ -579,7 +583,7 @@ async def calculate(
             flag_make_proposed_kurses = True
         request.session["rates_from_form"].update(current_rates_from_form)
 
-
+    logger.debug(f"Session 'rates_from_form' set in calculate. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
 
     ''' 1. здесь
     если ввел юзер - НЕ вызывать make_proposed_kurses (flag_make_proposed_kurses=False) и присвоить proposed_kurses значение от юзера
