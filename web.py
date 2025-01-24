@@ -137,7 +137,7 @@ async def get_current_user(
     user_name = request.session.get("access_token")
     if not user_name:
         return None
-    user = db.exec(select(User).where(User.user_name == user.user_name)).first()
+    user = db.exec(select(User).where(User.user_name == user_name)).first()
     return user
 
 async def get_current_active_user(
@@ -439,13 +439,11 @@ async def list_view(
         request: Request,
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
+    rates_from_session = request.session.get("rates_from_form") # Get from session first
 
-    # form_data = request.session.get("form_data", None)
-    # logger.info(f'initial form data -- {len(form_data)} -- {type(form_data)}')
-    # if isinstance(form_data, str):
-    #     form_data = json.loads(form_data)
     form_data = dict(await request.form())
-    if form_data:
+    if form_data: # Form data submitted in *this* request?
+
         form_data = validate_form_data(form_data)
         logger.info(f'calc form data -- {form_data}-- {len(form_data)} -- {type(form_data)}')
         form_data_ids = [x.get('nomer_punkta') for x in json.loads(form_data['source_id'].replace("\'", "\""))]
@@ -457,16 +455,9 @@ async def list_view(
                 current_rates_from_form[id][name] = form_data[name]
         request.session['rates_from_form'] = current_rates_from_form
         logger.debug(f"Session 'rates_from_form' set in list_view. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
-
-    try:
-        rates_from_form = request.session.get("rates_from_form", {})
-        logger.debug(f"Session 'rates_from_form' retrieved in list_view. Size: {sys.getsizeof(rates_from_form)}") # ADDED LOGGING
-    except:
-        rates_from_form = {}
-    hello = request.session.get("hello")
-    logger.debug(f'hello - 0: {hello}')
-    _, data_to_render = process_before_viewing(rates_from_form, mode='fast')
-    if not rates_from_form:
+    elif rates_from_session is None:  # No form data in this request, and *no* session data yet?
+        _, data_to_render = process_before_viewing(mode='fast')  # Get default data
+        rates_from_form = {}  # Initialize default rates_from_form
         for item in data_to_render:
             id = item.get('nomer_punkta')
             rates_from_form[id] = {}
@@ -476,6 +467,11 @@ async def list_view(
                 rates_from_form[id][name] = item.get(item_key)
         request.session["rates_from_form"] = rates_from_form
         logger.debug(f"Session 'rates_from_form' (default) set in list_view. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
+    else:
+        rates_from_form = rates_from_session  # Use existing session data
+
+    _, data_to_render = process_before_viewing(rates_from_form, mode='fast')
+
     logger.info(f'rates_from_form, list view: {len(rates_from_form)}, {type(rates_from_form)}, {rates_from_form}')
 
     if current_user.id != 369:
@@ -491,13 +487,7 @@ async def detail_view(
         item_id: int,
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    # form_data = request.session.get("form_data", None)
-    # if isinstance(form_data, str):
-    #     try:
-    #         form_data = json.loads(form_data)
-    #     except json.JSONDecodeError:
-    #         form_data = {}
-
+    rates_from_session = request.session.get("rates_from_form") # Get from session first
     form_data = dict(await request.form())
     if form_data:
         form_data = validate_form_data(form_data)
@@ -511,10 +501,21 @@ async def detail_view(
                 current_rates_from_form[id][name] = form_data[name]
         request.session['rates_from_form'] = current_rates_from_form
         logger.debug(f"Session 'rates_from_form' set in detail_view. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
+    elif rates_from_session is None:  # No form data in this request, and *no* session data yet?
+        _, data_to_render = process_before_viewing(mode='fast')  # Get default data
+        rates_from_form = {}  # Initialize default rates_from_form
+        for item in data_to_render:
+            id = item.get('nomer_punkta')
+            rates_from_form[id] = {}
+            for name in ['item__usd_kurs_prinyato', 'item__usd_kurs_vydano', 'item__eur_kurs_prinyato',
+                         'item__eur_kurs_vydano', 'item__rub_kurs_prinyato', 'item__rub_kurs_vydano']:
+                item_key = name.replace('item__', '').replace('usd_', 'usd__').replace('eur_', 'eur__').replace('rub_', 'rub__')
+                rates_from_form[id][name] = item.get(item_key)
+        request.session["rates_from_form"] = rates_from_form
+        logger.debug(f"Session 'rates_from_form' (default) set in list_view. Size: {sys.getsizeof(request.session['rates_from_form'])}") # ADDED LOGGING
+    else:
+        rates_from_form = rates_from_session  # Use existing session data
 
-    hello = request.session.get("hello")
-    logger.debug(f'hello - 1: {hello}')
-    rates_from_form = request.session.get("rates_from_form", {})
     logger.debug(f"Session 'rates_from_form' retrieved in detail_view. Size: {sys.getsizeof(rates_from_form)}") # ADDED LOGGING
     myfin_data, data_to_render = process_before_viewing(rates_from_form, mode='fast')
 
