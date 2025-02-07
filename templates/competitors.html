@@ -1,30 +1,37 @@
 {# competitors.html #}
+<style>
+    .narrow-col {
+        width: 15px;
+    }
+</style>
+{% if datetimes.myfin_calc_datetime %}<span style="padding-left: 1px; margin-left: 14px; font-size: 12px">Курсы myfin.by обновлены в: {{datetimes.myfin_calc_datetime[:19]}}</span>{% endif %}
 <div style="display: flex;">
-    {% for item in items %}
-        {% for key, value in item.items() %}
-            {% if '__Конкуренты' in key %}
-                <div style="margin-right: 20px; text-align: center;"> <!-- Add margin for spacing -->
-                    <strong>{{ key.split("__")[0] | upper }}</strong>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Банк</th>
-                                <th>Покупка</th>
-                                <th>Продажа</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for bank_name, bank_data in value.items() %}
-                                <tr>
-                                    <td>{{ bank_name }}</td>
-                                    <td>{{ bank_data['Покупка'] }}</td>
-                                    <td>{{ bank_data['Продажа'] }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
-        {% endfor %}
+    {% for currency, body in competitors.items() %}
+        <div style="margin-right: 20px; text-align: center;"> <!-- Add margin for spacing -->
+            <strong style="padding: 1rem;">{{ currency | upper }}</strong>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="max-width: 100px;">Банк</th>
+                        <th class="narrow-col">Покупка</th>
+                        <th class="narrow-col">Продажа</th>
+                        <th>Адрес</th>
+                        <th class="narrow-col">Расстояние</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for sell_item in body if sell_item.operation_type == 'покупка' %}
+                    {% set buy_item = body | selectattr('ranking', '==', sell_item.ranking) | selectattr('operation_type', '==', 'продажа') | first %}
+                    <tr>
+                        <td style="max-width: 100px;">{{ sell_item.bank_name }} </td>
+                        <td class="narrow-col" {% if buy_item.rank_max == 1 %} style="background-color: lightgreen;"{% endif %} {% if buy_item.rank_min == 1 %} style="background-color: lightcoral;"{% endif %}>{{ buy_item.value | round(3) }} </td>
+                        <td class="narrow-col" {% if sell_item.rank_max == 1 %} style="background-color: lightgreen;"{% endif %} {% if sell_item.rank_min == 1 %} style="background-color: lightcoral;"{% endif %}>{{ sell_item.value | round(3) }} </td>
+                        <td>{{ sell_item.department_address }}</td>
+                        <td class="narrow-col">{{ sell_item.distance }}</td>
+                     </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% endfor %}
 </div>
