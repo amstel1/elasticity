@@ -1,63 +1,31 @@
+{# competitors.html #}
 <style>
     .narrow-col {
+        width: 15px; /* This style will be overridden by table-layout: auto; but we keep it just in case */
         white-space: nowrap; /* Prevent text wrapping in narrow columns */
     }
     .content-table {
         table-layout: auto; /* Makes columns adjust to content width */
         width: auto; /* Ensures the table itself fits content */
-        border-collapse: collapse; /* Collapses borders for a cleaner look */
-        margin-bottom: 20px; /* Add some space between tables */
-        font-family: sans-serif; /* Use a cleaner font */
+        border-collapse: collapse; /* Optional: collapses borders for a cleaner look */
     }
 
-    .content-table thead tr { /* Style table header row */
-        background-color: #f0f0f0; /* Light gray background for header */
-    }
-
-    .content-table th {
-        padding: 10px 8px; /* Slightly increased padding for headers */
-        border: 1px solid #ddd;
-        border-bottom-width: 2px; /* Stronger bottom border for header */
-        font-weight: bold; /* Ensure header text is bold */
-        text-align: left; /* Align header text to the left */
-        white-space: nowrap; /* Prevent header text wrapping too */
-    }
-
+    .content-table th,
     .content-table td {
-        padding: 8px;
-        border: 1px solid #ddd;
-        white-space: nowrap; /* Prevent text wrapping by default */
-    }
-
-    .content-table td.narrow-col { /* Apply narrow-col specific style */
-        text-align: right; /* Right-align numbers in narrow columns */
-    }
-
-    .content-table th:first-child, /* Style for the first column header ("Банк") */
-    .content-table td:first-child { /* Style for the first column data cells ("Bank") */
-        max-width: 200px; /* Increased max-width for "Банк" column */
-        overflow: hidden; /* In case bank names are still too long */
-        text-overflow: ellipsis; /* Show ellipsis (...) if bank name is truncated */
-        white-space: nowrap; /* Keep bank name on one line */
-    }
-
-    .currency-header { /* Style for the currency name above the table */
-        padding: 0.5rem 1rem;
-        font-size: 1.2em; /* Slightly larger currency name */
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 0.5rem; /* Space between currency name and table */
+        padding: 8px; /* Optional: adds some padding for better readability */
+        border: 1px solid #ddd; /* Optional: adds borders for visual structure */
+        white-space: nowrap; /* Prevent text wrapping by default, adjust if needed for specific columns */
     }
 </style>
-{# ... HTML remains mostly the same, but use class 'currency-header' for the <strong> element ... #}
+{% if datetimes.myfin_calc_datetime %}<span style="padding-left: 1px; margin-left: 14px; font-size: 12px">Курсы myfin.by обновлены в: {{datetimes.myfin_calc_datetime[:19]}}</span>{% endif %}
 <div style="display: flex;">
     {% for currency, body in competitors.items() %}
-        <div style="margin-right: 20px; text-align: center;">
-            <strong class="currency-header">{{ currency | upper }}</strong>  {# Added class 'currency-header' #}
-            <table class="content-table">
+        <div style="margin-right: 20px; text-align: center;"> <!-- Add margin for spacing -->
+            <strong style="padding: 1rem;">{{ currency | upper }}</strong>
+            <table class="content-table"> <!-- Added class 'content-table' here -->
                 <thead>
                     <tr>
-                        <th>Банк</th>
+                        <th style="max-width: 100px;">Банк</th>
                         <th class="narrow-col">Покупка</th>
                         <th class="narrow-col">Продажа</th>
                         <th>Адрес</th>
@@ -65,7 +33,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                {# ... table body content ... #}
+                {% for sell_item in body if sell_item.operation_type == 'покупка' %}
+                    {% set buy_item = body | selectattr('ranking', '==', sell_item.ranking) | selectattr('operation_type', '==', 'продажа') | first %}
+                    <tr>
+                        <td style="max-width: 100px;">{{ sell_item.bank_name }} </td>
+                        <td class="narrow-col" {% if buy_item.rank_max == 1 %} style="background-color: lightgreen;"{% endif %} {% if buy_item.rank_min == 1 %} style="background-color: lightcoral;"{% endif %}>{{ buy_item.value | round(3) }} </td>
+                        <td class="narrow-col" {% if sell_item.rank_max == 1 %} style="background-color: lightgreen;"{% endif %} {% if sell_item.rank_min == 1 %} style="background-color: lightcoral;"{% endif %}>{{ sell_item.value | round(3) }} </td>
+                        <td>{{ sell_item.department_address }}</td>
+                        <td class="narrow-col">{{ sell_item.distance }}</td>
+                     </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
