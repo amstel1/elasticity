@@ -1,26 +1,54 @@
 {# competitors.html #}
 <style>
     .narrow-col {
-        width: 15px; /* This style will be overridden by table-layout: auto; but we keep it just in case */
         white-space: nowrap; /* Prevent text wrapping in narrow columns */
+        width: 1%; /* Helps narrow columns shrink to content, especially with table-layout: auto */
     }
     .content-table {
         table-layout: auto; /* Makes columns adjust to content width */
-        width: auto; /* Ensures the table itself fits content */
+        width: 100%; /* Ensures the table takes full width of its container */
         border-collapse: collapse; /* Optional: collapses borders for a cleaner look */
+        margin: 0 auto; /* Center the table if needed */
     }
 
     .content-table th,
     .content-table td {
         padding: 8px; /* Optional: adds some padding for better readability */
         border: 1px solid #ddd; /* Optional: adds borders for visual structure */
-        white-space: nowrap; /* Prevent text wrapping by default, adjust if needed for specific columns */
+        word-break: break-word; /* Allows words to break and wrap within cells */
     }
+
+    .content-table th:nth-child(4), /* Target "Адрес" header */
+    .content-table td:nth-child(4) { /* Target "Адрес" cells */
+        max-width: 200px; /* Limit max width for "Адрес" column */
+        word-break: break-word; /* Ensure long words wrap */
+        white-space: normal; /* Allow wrapping for address text */
+    }
+
+    .content-table th:nth-child(1), /* Target "Банк" header */
+    .content-table td:nth-child(1) { /* Target "Банк" cells */
+        max-width: 150px; /* Limit max width for "Банк" column */
+        white-space: nowrap; /* Prevent wrapping for bank name */
+        overflow: hidden;        /* Hide overflowing text */
+        text-overflow: ellipsis; /* Indicate overflow with ellipsis */
+    }
+
+
+    .content-table th:nth-child(2), /* Target "Покупка" header */
+    .content-table th:nth-child(3), /* Target "Продажа" header */
+    .content-table th:nth-child(5), /* Target "Расстояние" header */
+    .content-table td:nth-child(2), /* Target "Покупка" cells */
+    .content-table td:nth-child(3), /* Target "Продажа" cells */
+    .content-table td:nth-child(5) { /* Target "Расстояние" cells */
+        white-space: nowrap; /* Keep "Покупка", "Продажа", "Расстояние" in one line */
+        text-align: center; /* Center align content in these columns */
+    }
+
 </style>
 {% if datetimes.myfin_calc_datetime %}<span style="padding-left: 1px; margin-left: 14px; font-size: 12px">Курсы myfin.by обновлены в: {{datetimes.myfin_calc_datetime[:19]}}</span>{% endif %}
-<div style="display: flex;">
+<div style="display: flex; flex-wrap: wrap; overflow-x: auto;"> <!-- Added flex-wrap and overflow-x: auto to the container -->
     {% for currency, body in competitors.items() %}
-        <div style="margin-right: 20px; text-align: center;"> <!-- Add margin for spacing -->
+        <div style="margin-right: 20px; text-align: center; margin-bottom: 20px; flex: 1 1 300px; min-width: 300px;"> <!-- Added margin-bottom, flex and min-width to the currency container -->
             <strong style="padding: 1rem;">{{ currency | upper }}</strong>
             <table class="content-table"> <!-- Added class 'content-table' here -->
                 <thead>
