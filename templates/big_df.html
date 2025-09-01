@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <!-- Simple styling with Bootstrap CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .filter-input { width: 100px; }
+        th, td { text-align: left; padding: 8px; }
+    </style>
+</head>
+<body>
+<div class="container-fluid mt-4">
+    <h1>{{ title }}</h1>
+
+    <form method="post" class="mb-3">
+        <button type="submit" name="action" value="filter" class="btn btn-primary">Filter</button>
+        <button type="submit" name="action" value="clear" class="btn btn-secondary">Clear Filters</button>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="table-dark">
+                    <!-- Row for Filter Inputs -->
+                    <tr>
+                        {% for col in columns %}
+                        <th>
+                            {% if col in numerical_cols %}
+                            <div class="d-flex flex-column">
+                                <input type="number" step="any" class="form-control form-control-sm mb-1 filter-input" 
+                                       name="{{ col }}_min" placeholder="Min" 
+                                       value="{{ filter_values.get(col ~ '_min', '') }}">
+                                <input type="number" step="any" class="form-control form-control-sm filter-input" 
+                                       name="{{ col }}_max" placeholder="Max" 
+                                       value="{{ filter_values.get(col ~ '_max', '') }}">
+                            </div>
+                            {% endif %}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                    <!-- Row for Column Headers -->
+                    <tr>
+                        {% for col in columns %}
+                        <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data_rows %}
+                    <tr>
+                        {% for col in columns %}
+                        <td>{{ row[col] }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+</div>
+</body>
+</html>
