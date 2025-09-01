@@ -7,7 +7,7 @@
         background-color: #fff9c4; /* Light yellow */
     }
     .rub-group {
-        background-color: #f0f4c3; /* Light lime */
+        background-color: #E9F2F9; /* Light lime */
     }
     table {
         width: 95%;
@@ -48,12 +48,122 @@
         display: block; /* Make sure error messages appear */
         margin-top: 2px;
     }
+    .negative-cell {
+        background-color: red;
+        color: white;
+    }
 </style>
 {% set usd_text_fields = ["usd__Сумма принято", "usd__Сумма выдано", "usd__Финансовый результат", "usd__Курс перекрытия",] %}
 {% set eur_text_fields = ["eur__Сумма принято", "eur__Сумма выдано", "eur__Финансовый результат", "eur__Курс перекрытия",] %}
 {% set rub_text_fields = ["rub__Сумма принято", "rub__Сумма выдано", "rub__Финансовый результат", "rub__Курс перекрытия",] %}
+{% set region_ix_2_name = {1:'Брестский регион', 2:'Витебский регион', 3:'Гомельский регион', 4:'Гродненский регион', 5:'Минская область', 6:'Могилевский регион', 7:'Минск'} %}
+<div style="display: flex;">
+{% if datetimes.voo_calc_datetime %}<span style="padding-left: 45px; margin: 3px; font-size: 12px;">Фичи обновлены в: {{datetimes.voo_calc_datetime[:19]}}</span>{% endif %}
+<br>
+{% if datetimes.baseline_kurs_calc_datetime %}<span style="padding-left: 45px; margin: 3px; font-size: 12px;">Курсы перекрытия обновлены в: {{datetimes.baseline_kurs_calc_datetime[:19]}}</span>{% endif %}
+</div>
 <table>
     <thead>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        {% if loop.index == 1 %}
+
+        <tr>
+            <td colspan="{{ header_columns|length }}" style="padding: 6px"><strong>{{region_ix_2_name[item.nomer_punkta//100]}}</strong>
+
+            </td>
+        </tr>
+        <thead>
+            <tr>
+                <th>Номер точки продаж</th>
+                {% for header in header_columns %}
+                    {% if '__' in header %}
+                        {% set parts = header.split('__') %}
+                        {% set currency = parts[0] %}
+                        {% set field_type = parts[1] %}
+                        {% if field_type in ['kurs_prinyato', 'kurs_vydano'] %}
+                            {% if currency == 'usd' %}
+                                <th class="usd-group">{% if field_type == 'kurs_prinyato' %}USD Курс покупки{% else %}USD Курс продажи{% endif %}</th>
+                            {% elif currency == 'eur' %}
+                                <th class="eur-group">{% if field_type == 'kurs_prinyato' %}EUR Курс покупки{% else %}EUR Курс продажи{% endif %}</th>
+                            {% elif currency == 'rub' %}
+                                <th class="rub-group">{% if field_type == 'kurs_prinyato' %}RUB Курс покупки{% else %}RUB Курс продажи{% endif %}</th>
+                            {% endif %}
+                        {% else %}
+                            <th class="{{ currency }}-group">{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        {% endif %}
+        <tr>
+            <td>{% if items|length > 1%}<strong><a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}</a></strong>{% else %}{{
+                item.nomer_punkta }}{% endif %}</td>
+            {% for header in header_columns %}
+                {% if '__' in header %}
+                    {% set parts = header.split('__') %}
+                    {% set currency = parts[0] %}
+                    {% set field_type = parts[1] %}
+
+                    {% set input_name = '%s__%s__%s' % (item.nomer_punkta, currency, field_type) %}
+
+                    {% if field_type == 'kurs_prinyato' %}
+                        {% if currency == 'usd' %}
+                            <td class="usd-group">
+                                <input type="text" name="{{ input_name }}" value="{{ item.usd__kurs_prinyato|default('')|round(3) }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
+                            </td>
+                        {% elif currency == 'eur' %}
+                            <td class="eur-group">
+                                <input type="text" name="{{ input_name }}" value="{{ item.eur__kurs_prinyato|default('')|round(3) }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
+                            </td>
+                        {% elif currency == 'rub' %}
+                            <td class="rub-group">
+                                <input type="text" name="{{ input_name }}" value="{{ item.rub__kurs_prinyato|default('')|round(3) }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
+                            </td>
+                        {% endif %}
+                    {% elif field_type == 'kurs_vydano' %}
+                        {% if currency == 'usd' %}
+                            <td class="usd-group">
+                                <input type="text" name="{{ input_name }}" value="{{ item.usd__kurs_vydano|default('')|round(3) }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
+                            </td>
+                        {% elif currency == 'eur' %}
+                            <td class="eur-group">
+                                <input type="text" name="{{ input_name }}" value="{{ item.eur__kurs_vydano|default('')|round(3) }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
+                            </td>
+                        {% elif currency == 'rub' %}
+                            <td class="rub-group">
+                                <input type="text" name="{{ input_name }}" value="{{ item.rub__kurs_vydano|default('')|round(3) }}">
+                                <span class="error-message" id="error_{{ input_name }}"></span>
+                            </td>
+                        {% endif %}
+                    {% else %}
+                        {% for k, v in item.items() %}
+                            {% if currency == 'usd' and header == k  %}
+                                <td class="usd-group">{{ v|default('')|round(3) }}</td>
+                            {% elif currency == 'eur' and header == k  %}
+                                <td class="eur-group">{{ v|default('')|round(3) }}</td>
+                            {% elif currency == 'rub' and header == k  %}
+                                <td class="rub-group">{{ v|default('')|round(3) }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </tr>
+        {% if loop.index < items|length - 1 %}
+        {% if (items[loop.index - 1].nomer_punkta // 100 != items[loop.index].nomer_punkta // 100)  %}
+        <tr>
+            <td colspan="{{ header_columns|length }}" style="padding: 6px"><strong>{{ region_ix_2_name[items[loop.index].nomer_punkta//100] }}</strong>
+            </td>
+        </tr>
+        <thead>
         <tr>
             <th>Номер Пункта</th>
             {% for header in header_columns %}
@@ -63,11 +173,11 @@
                     {% set field_type = parts[1] %}
                     {% if field_type in ['kurs_prinyato', 'kurs_vydano'] %}
                         {% if currency == 'usd' %}
-                            <th class="usd-group">{% if field_type == 'kurs_prinyato' %}USD Принято{% else %}USD Выдано{% endif %}</th>
+                            <th class="usd-group">{% if field_type == 'kurs_prinyato' %}USD Курс покупки{% else %}USD Курс продажи{% endif %}</th>
                         {% elif currency == 'eur' %}
-                            <th class="eur-group">{% if field_type == 'kurs_prinyato' %}EUR Принято{% else %}EUR Выдано{% endif %}</th>
+                            <th class="eur-group">{% if field_type == 'kurs_prinyato' %}EUR Курс покупки{% else %}EUR Курс продажи{% endif %}</th>
                         {% elif currency == 'rub' %}
-                            <th class="rub-group">{% if field_type == 'kurs_prinyato' %}RUB Принято{% else %}RUB Выдано{% endif %}</th>
+                            <th class="rub-group">{% if field_type == 'kurs_prinyato' %}RUB Курс покупки{% else %}RUB Курс продажи{% endif %}</th>
                         {% endif %}
                     {% else %}
                         <th class="{{ currency }}-group">{{ currency|upper }} {{ field_type|replace('_', ' ')|capitalize }}</th>
@@ -76,67 +186,8 @@
             {% endfor %}
         </tr>
     </thead>
-    <tbody>
-        {% for item in items %}
-        <tr>
-            <td>{% if items|length > 1%}<a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}</a>{% else %}{{
-                item.nomer_punkta }}{% endif %}</td>
-            {% for header in header_columns %}
-                {% if '__' in header %}
-                    {% set parts = header.split('__') %}
-                    {% set currency = parts[0] %}
-                    {% set field_type = parts[1] %}
-
-                    {% set input_name = 'item_%s_%s_%s' % (item.id, currency, field_type) %}
-
-                    {% if field_type == 'kurs_prinyato' %}
-                        {% if currency == 'usd' %}
-                            <td class="usd-group">
-                                <input type="text" name="{{ input_name }}" value="{{ item.usd__kurs_prinyato|default('') }}">
-                                <span class="error-message" id="error_{{ input_name }}"></span>
-                            </td>
-                        {% elif currency == 'eur' %}
-                            <td class="eur-group">
-                                <input type="text" name="{{ input_name }}" value="{{ item.eur__kurs_prinyato|default('') }}">
-                                <span class="error-message" id="error_{{ input_name }}"></span>
-                            </td>
-                        {% elif currency == 'rub' %}
-                            <td class="rub-group">
-                                <input type="text" name="{{ input_name }}" value="{{ item.rub__kurs_prinyato|default('') }}">
-                                <span class="error-message" id="error_{{ input_name }}"></span>
-                            </td>
-                        {% endif %}
-                    {% elif field_type == 'kurs_vydano' %}
-                        {% if currency == 'usd' %}
-                            <td class="usd-group">
-                                <input type="text" name="{{ input_name }}" value="{{ item.usd__kurs_vydano|default('') }}">
-                                <span class="error-message" id="error_{{ input_name }}"></span>
-                            </td>
-                        {% elif currency == 'eur' %}
-                            <td class="eur-group">
-                                <input type="text" name="{{ input_name }}" value="{{ item.eur__kurs_vydano|default('') }}">
-                                <span class="error-message" id="error_{{ input_name }}"></span>
-                            </td>
-                        {% elif currency == 'rub' %}
-                            <td class="rub-group">
-                                <input type="text" name="{{ input_name }}" value="{{ item.rub__kurs_vydano|default('') }}">
-                                <span class="error-message" id="error_{{ input_name }}"></span>
-                            </td>
-                        {% endif %}
-                    {% else %}
-                        {% for k, v in item.items() %}
-                            {% if currency == 'usd' and header == k  %}
-                                <td class="usd-group">{{ v|default('') }}</td>
-                            {% elif currency == 'eur' and header == k  %}
-                                <td class="eur-group">{{ v|default('') }}</td>
-                            {% elif currency == 'rub' and header == k  %}
-                                <td class="rub-group">{{ v|default('') }}</td>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-        </tr>
+        {% endif %}
+        {% endif %}
         {% endfor %}
     </tbody>
 </table>
@@ -162,14 +213,18 @@
                 isValid = false;
                 errorSpan.textContent = 'Число должно быть больше 0.';
             }
+            else if (parseFloat(value) > 10) {
+                isValid = false;
+                errorSpan.textContent = 'Число должно быть меньше 10.';
+            }
         });
 
         // Validate kurs_prinyato < kurs_vydano for each currency in each row
         const rows = document.querySelectorAll('tbody tr');
         rows.forEach(row => {
             // USD validation
-            const usd_prinyato_input = row.querySelector('input[name^="item_"][name$="_usd_kurs_prinyato"]');
-            const usd_vydano_input = row.querySelector('input[name^="item_"][name$="_usd_kurs_vydano"]');
+            const usd_prinyato_input = row.querySelector('[name$="usd__kurs_prinyato"]');
+            const usd_vydano_input = row.querySelector('[name$="usd__kurs_vydano"]');
             if (usd_prinyato_input && usd_vydano_input) {
                 const usd_prinyato = parseFloat(usd_prinyato_input.value);
                 const usd_vydano = parseFloat(usd_vydano_input.value);
@@ -181,8 +236,8 @@
             }
 
             // EUR validation
-            const eur_prinyato_input = row.querySelector('input[name^="item_"][name$="_eur_kurs_prinyato"]');
-            const eur_vydano_input = row.querySelector('input[name^="item_"][name$="_eur_kurs_vydano"]');
+            const eur_prinyato_input = row.querySelector('input[name$="eur__kurs_prinyato"]');
+            const eur_vydano_input = row.querySelector('input[name$="eur__kurs_vydano"]');
             if (eur_prinyato_input && eur_vydano_input) {
                 const eur_prinyato = parseFloat(eur_prinyato_input.value);
                 const eur_vydano = parseFloat(eur_vydano_input.value);
@@ -194,8 +249,8 @@
             }
 
             // RUB validation
-            const rub_prinyato_input = row.querySelector('input[name^="item_"][name$="_rub_kurs_prinyato"]');
-            const rub_vydano_input = row.querySelector('input[name^="item_"][name$="_rub_kurs_vydano"]');
+            const rub_prinyato_input = row.querySelector('input[name$="_rub__kurs_prinyato"]');
+            const rub_vydano_input = row.querySelector('input[name$="_rub__kurs_vydano"]');
             if (rub_prinyato_input && rub_vydano_input) {
                 const rub_prinyato = parseFloat(rub_prinyato_input.value);
                 const rub_vydano = parseFloat(rub_vydano_input.value);
@@ -211,7 +266,27 @@
             event.preventDefault(); // Prevent form submission if validation fails
         }
     }
+    function highlightNegativeCells() {
+        const cells = document.querySelectorAll('td');
+        cells.forEach(cell => {
+            const textContent = cell.textContent.trim();
+            if (!isNaN(parseFloat(textContent)) && !isNaN(textContent)) {
+                const value = parseFloat(textContent);
+                if (value < 0) {
+                    cell.classList.add('negative-cell');
+                } else {
+                    cell.classList.remove('negative-cell');
+                }
+            }
+        });
+    }
 
-    const form = document.querySelector('form');
-    form.addEventListener('submit', validateForm);
+    document.addEventListener('DOMContentLoaded', function(){
+        highlightNegativeCells();
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', validateForm);
+        }
+    });
+
 </script>
