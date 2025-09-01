@@ -21,31 +21,32 @@
     table {
         width: 95%;
         border-collapse: collapse;
-        margin: 20px auto;
+        margin: 10px auto;
         table-layout: fixed;
     }
     th, td {
         border: 1px solid #ddd;
-        padding: 4px; /* A bit more padding for readability */
+        padding: 3px;
         text-align: center;
-        font-size: 14px;
+        font-size: 10px;
         vertical-align: middle;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap; /* Prevent wrapping in cells */
+        white-space: nowrap;
+
     }
     th {
         background-color: #f2f2f2;
-        white-space: normal; /* Allow text wrapping for long headers */
+        white-space: normal;
         word-break: break-word;
     }
     .negative-cell {
-        background-color: #f44336; /* Red */
+        background-color: #f44336;
         color: white;
         font-weight: bold;
     }
     h2 {
-        padding-left: 2.5%; /* Align with table margin */
+        padding-left: 2.5%;
         margin-bottom: 5px;
         margin-top: 20px;
     }
@@ -65,15 +66,11 @@
     <table>
         <thead>
             <tr>
-                {# First column is always the point number #}
-                <th>Номер точки продаж</th>
-
-                {# Generate headers for the rest of the columns #}
                 {% for header in header_columns %}
                     {% set currency_class = '' %}
-                    {% if header.startswith('usd') %}{% set currency_class = 'usd-group' %}
-                    {% elif header.startswith('eur') %}{% set currency_class = 'eur-group' %}
-                    {% elif header.startswith('rub') %}{% set currency_class = 'rub-group' %}
+                    {% if header.startswith('USD') %}{% set currency_class = 'usd-group' %}
+                    {% elif header.startswith('EUR') %}{% set currency_class = 'eur-group' %}
+                    {% elif header.startswith('RUB') %}{% set currency_class = 'rub-group' %}
                     {% endif %}
                     <th class="{{ currency_class }}">{{ header }}</th>
                 {% endfor %}
@@ -82,23 +79,12 @@
         <tbody>
             {% for item in items %}
             <tr>
-                {# Point number cell with link logic #}
-                <td>
-                    {% if items|length > 1 %}
-                        <strong><a href="/{{ item.nomer_punkta }}">{{ item.nomer_punkta }}</a></strong>
-                    {% else %}
-                        {{ item.nomer_punkta }}
-                    {% endif %}
-                </td>
-
-                {# Generate data cells for the rest of the columns #}
                 {% for header in header_columns %}
                     {% set currency_class = '' %}
                     {% if header.startswith('usd') %}{% set currency_class = 'usd-group' %}
                     {% elif header.startswith('eur') %}{% set currency_class = 'eur-group' %}
                     {% elif header.startswith('rub') %}{% set currency_class = 'rub-group' %}
                     {% endif %}
-
                     {% set value = item[header] %}
                     <td class="{{ currency_class }}">
                         {# Apply rounding only if the value is a number #}
