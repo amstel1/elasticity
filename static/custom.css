@@ -3,8 +3,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background-color: #f8f9fa; /* Light background */
-    border-bottom: 1px solid #eee; /* Subtle border */
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
     border-collapse: collapse;
     width: 95%;
     margin-left: auto;
@@ -22,46 +22,39 @@
     margin-right: 1rem;
 }
 
-/* NEW: Styles for the actions container */
 .nav-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem; /* Space between buttons */
+    gap: 0.75rem;
 }
 
-/* NEW: Remove margin from form to align button correctly */
 .nav-actions form {
     margin: 0;
 }
 
-/* NEW: Style for more compact buttons in the nav */
 .nav-button {
-    display: inline-flex; /* Align icon and text */
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem; /* Space between icon and text */
-    margin: 0; /* Remove default button margins */
-    --pico-font-size: 0.9rem; /* Smaller text */
-    --pico-padding: 0.4rem 0.8rem; /* Tighter padding */
+    gap: 0.5rem;
+    margin: 0;
+    --pico-font-size: 0.9rem;
+    --pico-padding: 0.4rem 0.8rem;
 }
 
-/* NEW: Reset styles for the dropdown container */
 .nav-dropdown {
     margin: 0;
     padding: 0;
     border: none;
 }
 
-/* NEW: Ensure the dropdown summary button uses our custom style */
 .nav-dropdown > summary {
-    list-style: none; /* remove default marker */
+    list-style: none;
 }
 
-/* NEW: Pico adds a default chevron we don't need */
 .nav-dropdown > summary::after {
     display: none;
 }
 
-/* NEW: Position the dropdown menu correctly */
 .nav-dropdown > ul {
     margin-top: 0.5rem;
     min-width: 100%;
@@ -75,41 +68,36 @@
     gap: 1rem;
 }
 
-/* Style for the descriptive text */
 .model-switcher-label {
-    font-size: 0.9rem; /* Smaller font size */
-    color: #6c757d; /* Muted text */
+    font-size: 0.9rem;
+    color: #6c757d;
 }
 
-/* Highlight the current model type */
 .model-switcher-label strong {
     font-weight: 600;
-    color: #212529; /* A bit darker for emphasis */
+    color: #212529;
     background-color: #e9ecef;
     padding: 0.2em 0.5em;
     border-radius: 4px;
     text-transform: capitalize;
 }
 
-/* Ensure form takes up no extra space */
 .model-switcher form {
     margin: 0;
 }
 
-/* A custom, smaller button style for the switcher */
 .btn-switcher {
-    display: inline-flex; /* Allows aligning icon and text */
+    display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    --pico-font-size: 0.85rem; /* Make button text smaller */
-    --pico-padding: 0.25rem 0.75rem; /* Reduce vertical and horizontal padding */
+    --pico-font-size: 0.85rem;
+    --pico-padding: 0.25rem 0.75rem;
     --pico-border-radius: 6px;
     transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
 
-/* Style for the SVG icon inside the button */
 .btn-switcher svg {
     width: 1em;
     height: 1em;
-    stroke-width: 2.5; /* Makes the icon lines a bit thicker */
+    stroke-width: 2.5;
 }
