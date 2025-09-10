@@ -1,129 +1,56 @@
-.nav-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background-color: #f8f9fa; /* Light background */
-    border-bottom: 1px solid #eee; /* Subtle border */
-    border-collapse: collapse;
-    width: 95%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.nav-left {
-    display: flex;
-    align-items: center;
-}
-
-.nav-title {
-    font-size: 1.25rem;
-    font-weight: bold;
-    margin-right: 1rem;
-}
-
-.nav-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem; /* Space between elements */
-}
-
-.nav-user-info {
-    font-size: 0.9rem;
-    color: #6c757d; /* Muted text color */
-}
-
-.nav-logout-button {
-    --pico-color: #dc3545; /* Red color for logout */
-    --pico-contrast: #fff;
-    font-size: 0.9rem;
-}
-
-
-.calculate-form {
-    display: flex;
-    justify-content: center;
-    margin-top: 1rem;
-    gap: 1rem;
-}
-
-.custom-button {
-    box-sizing: border-box;
-    padding: 0.3rem 1.0rem;
-    font-size: 0.7rem;
-    max-width: 12rem;
-}
-
-/* A simpler container for inline display */
-.model-toggle-subtle {
-    display: flex;
-    align-items: baseline; /* Aligns the text baseline with the button's text */
-    gap: 0.75rem;          /* Adds space between the text and the button */
-    width: 95%;
-    margin: 1.5rem auto;   /* Center and add vertical space */
-    justify-content: flex-start; /* Or 'center' if you prefer */
-}
-
-.model-toggle-subtle span {
-    font-size: 1rem;
-    color: #6c757d; /* Muted text color */
-}
-
-.model-toggle-subtle strong {
-    color: #212529; /* Darker color for the model name */
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-/* Remove default form margin */
-.model-toggle-subtle form {
-    margin: 0;
-}
-
-/* Container for the elegant model switcher */
-.model-switcher {
-    display: flex;
-    align-items: center; /* Vertically center-align items */
-    gap: 0.75rem;
-    width: 95%;
-    margin: 0.5rem auto 1.5rem auto; /* Less space above, more below */
-}
-
-/* Style for the descriptive text */
-.model-switcher-label {
-    font-size: 0.9rem; /* Smaller font size */
-    color: #6c757d; /* Muted text */
-}
-
-/* Highlight the current model type */
-.model-switcher-label strong {
-    font-weight: 600;
-    color: #212529; /* A bit darker for emphasis */
-    background-color: #e9ecef;
-    padding: 0.2em 0.5em;
-    border-radius: 4px;
-    text-transform: capitalize;
-}
-
-/* Ensure form takes up no extra space */
-.model-switcher form {
-    margin: 0;
-}
-
-/* A custom, smaller button style for the switcher */
-.btn-switcher {
-    display: inline-flex; /* Allows aligning icon and text */
-    align-items: center;
-    gap: 0.4rem;
-    --pico-font-size: 0.85rem; /* Make button text smaller */
-    --pico-padding: 0.25rem 0.75rem; /* Reduce vertical and horizontal padding */
-    --pico-border-radius: 6px;
-    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
-}
-
-/* Style for the SVG icon inside the button */
-.btn-switcher svg {
-    width: 1em;
-    height: 1em;
-    stroke-width: 2.5; /* Makes the icon lines a bit thicker */
-}
+    {# list.html #}
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Эластичность курса - свод</title>
+        <link rel="stylesheet" href="{{ url_for('static', path='pico.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='custom.css') }}">
+    </head>
+    <body>
+        <main>
+            <nav class="nav-container">
+                <div class="nav-left">
+                    <span class="nav-title">Сводный вид</span>
+                </div>
+                <div class="nav-actions">
+                    <div class="model-switcher-label">
+                            <span>Подход:</span>
+                            <strong>{{ model_type }}</strong>
+                    </div>
+                    <form action="change-model-type" method="post">
+                            <button type="submit" class="secondary outline btn-switcher button-sm">
+                                {% if model_type == 'causal' %}
+                                    Сменить подход на predictive
+                                {% else %}
+                                    Сменить подход на causal
+                                {% endif %}
+                            </button>
+                        </form>
+                    <form action="/" method="get">
+                        <input type="hidden" name="action" value="press">
+                        <button type="submit" class="button-sm">Полный пересчет</button>
+                    </form>
+                    <a href="/download/file_short"
+                       role="button"
+                       class="secondary button-sm"
+                       download="short__usd_eur_rub.xlsx">
+                    Скачать краткий отчет
+                    </a>
+                    <a href="/download/file_long"
+                       role="button"
+                       class="secondary"
+                       download="long__usd_eur_rub.xlsx">
+                    Скачать полный отчет
+                    </a>
+                </div>
+            </nav>
+            <div>
+                <div>
+                    {% include 'item_table.html' %}
+                </div>
+            </div>
+        </main>
+    </body>
+    </html>
