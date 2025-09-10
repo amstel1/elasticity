@@ -10,44 +10,31 @@
     </head>
     <body>
         <main>
-                
-<!-- START: Replaced Code -->
-<div class="model-switcher">
-    <div class="model-switcher-label">
-        <span>Подход:</span>
-        <strong>{{ model_type }}</strong>
-    </div>
-    <form action="change-model-type" method="post">
-        <button type="submit" class="secondary outline btn-switcher">
-            <!-- SVG Icon for switching -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/>
-            </svg>
-            <!-- Shorter, more direct text -->
-            {% if model_type == 'causal' %}
-                Сменить на Predictive
-            {% else %}
-                Сменить на Causal
-            {% endif %}
-        </button>
-    </form>
-</div>
-<!-- END: Replaced Code -->
-
-  
             <nav class="nav-container">
                 <div class="nav-left">
                     <span class="nav-title">Сводный вид</span>
                 </div>
-                <div></div>
                 <div class="nav-actions">
+                    <div class="model-switcher-label">
+                            <span>Подход:</span>
+                            <strong>{{ model_type }}</strong>
+                    </div>
+                    <form action="change-model-type" method="post">
+                            <button type="submit" class="secondary outline btn-switcher button-sm">
+                                {% if model_type == 'causal' %}
+                                    Сменить подход на predictive
+                                {% else %}
+                                    Сменить подход на causal
+                                {% endif %}
+                            </button>
+                        </form>
                     <form action="/" method="get">
                         <input type="hidden" name="action" value="press">
-                        <button type="submit">Полный пересчет</button>
+                        <button type="submit" class="button-sm">Полный пересчет</button>
                     </form>
                     <a href="/download/file_short"
                        role="button"
-                       class="secondary"
+                       class="secondary button-sm"
                        download="short__usd_eur_rub.xlsx">
                     Скачать краткий отчет
                     </a>
