@@ -30,6 +30,17 @@
 
 .nav-actions form {
     margin: 0;
+    display: inline-flex;
+}
+
+.button-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.button-group > form {
+    margin-button: 0;
 }
 
 .nav-button {
