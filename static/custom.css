@@ -75,41 +75,6 @@
     gap: 1rem;
 }
 
-/* A simpler container for inline display */
-.model-toggle-subtle {
-    display: flex;
-    align-items: baseline; /* Aligns the text baseline with the button's text */
-    gap: 0.75rem;          /* Adds space between the text and the button */
-    width: 95%;
-    margin: 1.5rem auto;   /* Center and add vertical space */
-    justify-content: flex-start; /* Or 'center' if you prefer */
-}
-
-.model-toggle-subtle span {
-    font-size: 1rem;
-    color: #6c757d; /* Muted text color */
-}
-
-.model-toggle-subtle strong {
-    color: #212529; /* Darker color for the model name */
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-/* Remove default form margin */
-.model-toggle-subtle form {
-    margin: 0;
-}
-
-/* Container for the elegant model switcher */
-.model-switcher {
-    display: flex;
-    align-items: center; /* Vertically center-align items */
-    gap: 0.75rem;
-    width: 95%;
-    margin: 0.5rem auto 1.5rem auto; /* Less space above, more below */
-}
-
 /* Style for the descriptive text */
 .model-switcher-label {
     font-size: 0.9rem; /* Smaller font size */
