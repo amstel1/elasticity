@@ -10,16 +10,20 @@
     </head>
     <body>
         <main>
-            <p>Текущий подход: {{ model_type }}</p>
-            <form action="change-model-type" method="post" class="toggle-form">
-                <button type="submit" class="toggle-button">
-                    {% if model_type == 'causal' %}
-                        Switch to Predictive
-                    {% else %}
-                        Switch to Causal
-                    {% endif %}
-                </button>
-            </form>
+            <!-- START: Replaced Code -->
+            <div class="model-toggle-subtle">
+                <span>Текущий подход: <strong>{{ model_type }}</strong></span>
+                <form action="change-model-type" method="post">
+                    <button type="submit" class="secondary outline">
+                        {% if model_type == 'causal' %}
+                            Switch to Predictive
+                        {% else %}
+                            Switch to Causal
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+            <!-- END: Replaced Code -->
             <nav class="nav-container">
                 <div class="nav-left">
                     <span class="nav-title">Сводный вид</span>
