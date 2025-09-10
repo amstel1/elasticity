@@ -112,3 +112,20 @@
     height: 1em;
     stroke-width: 2.5;
 }
+
+/* --- Added CSS for uniform button size --- */
+
+/* Make the containers for the buttons (form, details)
+   grow equally to fill the space. */
+.button-group > form,
+.button-group > details {
+    flex: 1;
+    display: flex;
+}
+
+/* Make the buttons themselves fill their container and
+   center their content (icon and text). */
+.button-group .nav-button {
+    flex-grow: 1; /* or width: 100%; */
+    justify-content: center;
+}
