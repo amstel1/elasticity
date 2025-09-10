@@ -4,86 +4,50 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Item List</title>
-<!--        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">-->
+        <title>Эластичность курса - свод</title>
         <link rel="stylesheet" href="{{ url_for('static', path='pico.css') }}">
-        
-        <style>
-            .nav-container {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 1rem;
-                background-color: #f8f9fa; /* Light background */
-                border-bottom: 1px solid #eee; /* Subtle border */
-                border-collapse: collapse;
-                width: 95%;
-                margin-left: auto;
-                margin-right: auto;
-            }
-    
-            .nav-left {
-                display: flex;
-                align-items: center;
-            }
-    
-            .nav-title {
-                font-size: 1.25rem;
-                font-weight: bold;
-                margin-right: 1rem;
-            }
-    
-            .nav-right {
-                display: flex;
-                align-items: center;
-                gap: 1rem; /* Space between elements */
-            }
-    
-            .nav-user-info {
-                font-size: 0.9rem;
-                color: #6c757d; /* Muted text color */
-            }
-    
-            .nav-logout-button {
-                --pico-color: #dc3545; /* Red color for logout */
-                --pico-contrast: #fff;
-                font-size: 0.9rem;
-            }
-    
-            .calculate-form {
-                display: flex;
-                justify-content: center;
-                margin-top: 1rem; /* Add some space above the button */
-                border-collapse: collapse;
-                width: 9%;
-                margin-left: auto;
-                margin-right: auto;
-            }
-        </style>
+        <link rel="stylesheet" href="{{ url_for('static', path='custom.css') }}">
     </head>
     <body>
         <main>
+            <p>Текущий подход: {{ model_type }}</p>
+            <form action="change-model-type" method="post" class="toggle-form">
+                <button type="submit" class="toggle-button">
+                    {% if model_type == 'causal' %}
+                        Switch to Predictive
+                    {% else %}
+                        Switch to Causal
+                    {% endif %}
+                </button>
+            </form>
             <nav class="nav-container">
                 <div class="nav-left">
-                    <span class="nav-title">Item List</span>
+                    <span class="nav-title">Сводный вид</span>
                 </div>
-                {% if current_user %}
-                <div class="nav-right">
-                    <span class="nav-user-info">Logged in as {{ current_user.user_name }}</span>
-                    <a href="/logout" role="button" class="nav-logout-button">Logout</a>
+                <div></div>
+                <div class="nav-actions">
+                    <form action="/" method="get">
+                        <input type="hidden" name="action" value="press">
+                        <button type="submit">Полный пересчет</button>
+                    </form>
+                    <a href="/download/file_short"
+                       role="button"
+                       class="secondary"
+                       download="short__usd_eur_rub.xlsx">
+                    Скачать краткий отчет
+                    </a>
+                    <a href="/download/file_long"
+                       role="button"
+                       class="secondary"
+                       download="long__usd_eur_rub.xlsx">
+                    Скачать полный отчет
+                    </a>
                 </div>
-                {% endif %}
             </nav>
             <div>
-                <form method="post" action="/calculate">
-                    <div>
-                        {% include 'item_table.html' %}
-                        <div class="calculate-form">
-                            <input type="hidden" name="mode" value="fast">
-                            <button type="submit">Calculate</button>
-                        </div>
-                    </div>
-                </form>
+                <div>
+                    {% include 'item_table.html' %}
+                </div>
             </div>
         </main>
     </body>
