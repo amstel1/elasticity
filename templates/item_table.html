@@ -1,13 +1,5 @@
 {# item_table.html #}
-{#
-  EXPECTED CONTEXT DATA STRUCTURE:
-  - regions_data: A dictionary where keys are region names (str) and
-                  values are lists of item objects (list of dicts).
-                  Example: {'Брестский регион': [item1, item2], 'Витебский регион': [item3]}
-  - header_columns: A list of strings representing the column names to display,
-                    in order. e.g., ['usd__kurs_prinyato', 'usd__kurs_vydano', ...]
-  - datetimes: A dictionary with 'voo_calc_datetime' and 'baseline_kurs_calc_datetime'.
-#}
+
 <style>
     .usd-group {
         background-color: #e0f7fa; /* Light cyan */
@@ -53,16 +45,21 @@
 </style>
 
 <div style="display: flex; flex-direction: column; padding-left: 2.5%; margin-bottom: 10px;">
-    {% if datetimes.voo_calc_datetime %}
-        <span style="margin: 3px; font-size: 12px;">Фичи обновлены в: {{ datetimes.voo_calc_datetime[:19] }}</span>
+    {% if datetimes.model_calc_dttm %}
+        <span style="margin: 3px; font-size: 12px;">Модель рассчитана в: {{ datetimes.model_calc_dttm[:19] }}</span>
     {% endif %}
-    {% if datetimes.baseline_kurs_calc_datetime %}
-        <span style="margin: 3px; font-size: 12px;">Курсы перекрытия обновлены в: {{ datetimes.baseline_kurs_calc_datetime[:19] }}</span>
+    {% if datetimes.finrez_dttm %}
+        <span style="margin: 3px; font-size: 12px;">Данные алгоритма финреза загружены в: {{ datetimes.model_calc_dttm[:19] }}</span>
+    {% endif %}
+    {% if datetimes.kurs_perekrutiya_dttm %}
+        <span style="margin: 3px; font-size: 12px;">Курсы перекрытия обновлены в: {{ datetimes.kurs_perekrutiya_dttm[:19] }}</span>
     {% endif %}
 </div>
 
 {% for region_name, items in regions_data.items() %}
+    {% if region_name != 'default_region_name' %}
     <h2><strong>{{ region_name }}</strong></h2>
+    {% endif %}
     <table>
         <thead>
             <tr>
@@ -87,9 +84,12 @@
                     {% endif %}
                     {% set value = item[header] %}
                     <td class="{{ currency_class }}">
-                        {# Apply rounding only if the value is a number #}
                         {% if value is number %}
-                            {{ value|round(3) }}
+                            {% if header == 'Номер точки продаж' %}
+                                <strong><a href="/{{ value }}">{{ value }}</a></strong>
+                            {% else %}
+                                {{ value|round(3) }}
+                            {% endif %}
                         {% else %}
                             {{ value|default('') }}
                         {% endif %}
@@ -100,28 +100,3 @@
         </tbody>
     </table>
 {% endfor %}
-
-<script>
-    /**
-     * Finds all table cells (td), checks if their content is a negative number,
-     * and applies a 'negative-cell' class for styling if it is.
-     */
-    function highlightNegativeCells() {
-        const cells = document.querySelectorAll('td');
-        cells.forEach(cell => {
-            const textContent = cell.textContent.trim();
-            // Check if the content is a valid, finite number
-            if (textContent && !isNaN(parseFloat(textContent)) && isFinite(textContent)) {
-                const value = parseFloat(textContent);
-                if (value < 0) {
-                    cell.classList.add('negative-cell');
-                } else {
-                    cell.classList.remove('negative-cell');
-                }
-            }
-        });
-    }
-
-    // Run the styling function once the document is fully loaded.
-    document.addEventListener('DOMContentLoaded', highlightNegativeCells);
-</script>
