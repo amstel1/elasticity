@@ -1,24 +1,39 @@
 {# item_table.html #}
 
 <style>
-    /* Currency group background colors */
-    .usd-group { background-color: #b2ebf2; } /* Lighter cyan for USD */
-    .eur-group { background-color: #fffde7; } /* Lighter yellow for EUR */
-    .rub-group { background-color: #e3f2fd; } /* Lighter blue for RUB */
+    /* Base currency group colors */
+    .usd-group {
+        background-color: #e0f7fa; /* Light cyan */
+    }
+    .eur-group {
+        background-color: #fff9c4; /* Light yellow */
+    }
+    .rub-group {
+        background-color: #E9F2F9; /* Light blue */
+    }
 
-    /* Specific column styling for purchase/sale rates */
-    .usd-group-buy-rate { background-color: #80deea; } /* Darker cyan for USD Buy */
-    .usd-group-sell-rate { background-color: #4dd0e1; } /* Even darker cyan for USD Sell */
-    .eur-group-buy-rate { background-color: #fff59d; } /* Darker yellow for EUR Buy */
-    .eur-group-sell-rate { background-color: #ffee58; } /* Even darker yellow for EUR Sell */
-    .rub-group-buy-rate { background-color: #90caf9; } /* Darker blue for RUB Buy */
-    .rub-group-sell-rate { background-color: #42a5f5; } /* Even darker blue for RUB Sell */
+    /* REQ 1: Override for Buy/Sell columns */
+    .usd-group.col-buy    { background-color: #b2ebf2; } /* Darker cyan */
+    .usd-group.col-sell   { background-color: #f0fbfc; } /* Lighter cyan */
 
-    /* Specific column styling for overlap rates */
-    .usd-group-overlap-rate { color: #00796b; } /* Teal for USD Overlap */
-    .eur-group-overlap-rate { color: #f57f17; } /* Orange for EUR Overlap */
-    .rub-group-overlap-rate { color: #1565c0; } /* Dark blue for RUB Overlap */
+    .eur-group.col-buy    { background-color: #fff59d; } /* Darker yellow */
+    .eur-group.col-sell   { background-color: #fffde7; } /* Lighter yellow */
 
+    .rub-group.col-buy    { background-color: #dcebf6; } /* Darker blue */
+    .rub-group.col-sell   { background-color: #f3f8fd; } /* Lighter blue */
+
+    /* REQ 2: Text styling for Overlap columns */
+    .col-overlap {
+        color: #c2185b; /* Distinctive dark pink/magenta */
+        font-weight: 600; /* Make it pop */
+    }
+
+    /* REQ 3: Bold text for key financial columns */
+    .col-bold {
+        font-weight: bold;
+    }
+
+    /* Base table styling */
     table {
         width: 95%;
         border-collapse: collapse;
@@ -45,9 +60,6 @@
         color: white;
         font-weight: bold;
     }
-    .bold-text {
-        font-weight: bold;
-    }
     h2 {
         padding-left: 2.5%;
         margin-bottom: 5px;
@@ -60,7 +72,7 @@
         <span style="margin: 3px; font-size: 12px;">Модель рассчитана в: {{ datetimes.model_calc_dttm[:19] }}</span>
     {% endif %}
     {% if datetimes.finrez_dttm %}
-        <span style="margin: 3px; font-size: 12px;">Данные алгоритма финреза загружены в: {{ datetimes.model_calc_dttm[:19] }}</span>
+        <span style="margin: 3px; font-size: 12px;">Данные алгоритма финреза загружены в: {{ datetimes.finrez_dttm[:19] }}</span>
     {% endif %}
     {% if datetimes.kurs_perekrutiya_dttm %}
         <span style="margin: 3px; font-size: 12px;">Курсы перекрытия обновлены в: {{ datetimes.kurs_perekrutiya_dttm[:19] }}</span>
@@ -75,26 +87,31 @@
         <thead>
             <tr>
                 {% for header in header_columns %}
-                    {% set currency_class = '' %}
-                    {% if header.lower().startswith('usd') %}{% set currency_class = 'usd-group' %}
-                    {% elif header.lower().startswith('eur') %}{% set currency_class = 'eur-group' %}
-                    {% elif header.lower().startswith('rub') %}{% set currency_class = 'rub-group' %}
+                    {# Refactored: Build a dynamic class list based on header content #}
+                    {% set class_list = [] %}
+                    {% set header_lower = header.lower() %}
+
+                    {# Base Currency Group #}
+                    {% if header_lower.startswith('usd') %}{% set _ = class_list.append('usd-group') %}
+                    {% elif header_lower.startswith('eur') %}{% set _ = class_list.append('eur-group') %}
+                    {% elif header_lower.startswith('rub') %}{% set _ = class_list.append('rub-group') %}
                     {% endif %}
 
-                    {% set column_header_class = currency_class %}
-                    {% if header.endswith("Курс покупки") %}
-                        {% if header.lower().startswith('usd') %}{% set column_header_class = 'usd-group-buy-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set column_header_class = 'eur-group-buy-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set column_header_class = 'rub-group-buy-rate' %}
-                        {% endif %}
-                    {% elif header.endswith("Курс продажи") %}
-                        {% if header.lower().startswith('usd') %}{% set column_header_class = 'usd-group-sell-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set column_header_class = 'eur-group-sell-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set column_header_class = 'rub-group-sell-rate' %}
-                        {% endif %}
+                    {# REQ 1: Buy/Sell Background #}
+                    {% if header.endswith('Курс покупки') %}{% set _ = class_list.append('col-buy') %}
+                    {% elif header.endswith('Курс продажи') %}{% set _ = class_list.append('col-sell') %}
                     {% endif %}
 
-                    <th class="{{ column_header_class }}">{{ header }}</th>
+                    {# REQ 2: Overlap Text Color #}
+                    {% if header.endswith('Курс перекрытия') %}{% set _ = class_list.append('col-overlap') %}
+                    {% endif %}
+
+                    {# REQ 3: Bold Financials #}
+                    {% if header.endswith('Доходы') or header.endswith('обороты покупка факт') or header.endswith('обороты продажа факт') %}
+                        {% set _ = class_list.append('col-bold') %}
+                    {% endif %}
+
+                    <th class="{{ class_list|join(' ') }}">{{ header }}</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -102,51 +119,40 @@
             {% for item in items %}
             <tr>
                 {% for header in header_columns %}
-                    {% set currency_class = '' %}
-                    {% if header.lower().startswith('usd') %}{% set currency_class = 'usd-group' %}
-                    {% elif header.lower().startswith('eur') %}{% set currency_class = 'eur-group' %}
-                    {% elif header.lower().startswith('rub') %}{% set currency_class = 'rub-group' %}
+                    {# Refactored: Apply the exact same logic to data cells to ensure alignment #}
+                    {% set class_list = [] %}
+                    {% set header_lower = header.lower() %}
+
+                    {# Base Currency Group #}
+                    {% if header_lower.startswith('usd') %}{% set _ = class_list.append('usd-group') %}
+                    {% elif header_lower.startswith('eur') %}{% set _ = class_list.append('eur-group') %}
+                    {% elif header_lower.startswith('rub') %}{% set _ = class_list.append('rub-group') %}
                     {% endif %}
 
-                    {% set cell_class = currency_class %}
-                    {% if header.endswith("Курс покупки") %}
-                        {% if header.lower().startswith('usd') %}{% set cell_class = 'usd-group-buy-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set cell_class = 'eur-group-buy-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set cell_class = 'rub-group-buy-rate' %}
-                        {% endif %}
-                    {% elif header.endswith("Курс продажи") %}
-                        {% if header.lower().startswith('usd') %}{% set cell_class = 'usd-group-sell-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set cell_class = 'eur-group-sell-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set cell_class = 'rub-group-sell-rate' %}
-                        {% endif %}
-                    {% elif header.endswith("Курс перекрытия") %}
-                        {% if header.lower().startswith('usd') %}{% set cell_class = 'usd-group-overlap-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set cell_class = 'eur-group-overlap-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set cell_class = 'rub-group-overlap-rate' %}
-                        {% endif %}
+                    {# REQ 1: Buy/Sell Background #}
+                    {% if header.endswith('Курс покупки') %}{% set _ = class_list.append('col-buy') %}
+                    {% elif header.endswith('Курс продажи') %}{% set _ = class_list.append('col-sell') %}
+                    {% endif %}
+
+                    {# REQ 2: Overlap Text Color #}
+                    {% if header.endswith('Курс перекрытия') %}{% set _ = class_list.append('col-overlap') %}
+                    {% endif %}
+
+                    {# REQ 3: Bold Financials #}
+                    {% if header.endswith('Доходы') or header.endswith('обороты покупка факт') or header.endswith('обороты продажа факт') %}
+                        {% set _ = class_list.append('col-bold') %}
                     {% endif %}
 
                     {% set value = item[header] %}
-                    <td class="{{ cell_class }}">
+                    <td class="{{ class_list|join(' ') }}">
                         {% if value is number %}
                             {% if header == 'Номер точки продаж' %}
                                 <strong><a href="/{{ value }}">{{ value }}</a></strong>
                             {% else %}
-                                {% set formatted_value = value|round(3) %}
-                                {% if header.endswith("Курс покупки") or header.endswith("Курс продажи") or header.endswith("Курс перекрытия") %}
-                                    {{ formatted_value }}
-                                {% elif header.lower().endswith('доходы') or header.lower().endswith('обороты покупка факт') or header.lower().endswith('обороты продажа факт') %}
-                                    <span class="bold-text">{{ formatted_value }}</span>
-                                {% else %}
-                                    {{ formatted_value }}
-                                {% endif %}
+                                {{ value|round(3) }}
                             {% endif %}
                         {% else %}
-                            {% if header.lower().endswith('доходы') or header.lower().endswith('обороты покупка факт') or header.lower().endswith('обороты продажа факт') %}
-                                <span class="bold-text">{{ value|default('') }}</span>
-                            {% else %}
-                                {{ value|default('') }}
-                            {% endif %}
+                            {{ value|default('') }}
                         {% endif %}
                     </td>
                 {% endfor %}
