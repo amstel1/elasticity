@@ -1,157 +1,62 @@
-{# item_table.html #}
-
-<style>
-    /* Currency group background colors */
-    .usd-group { background-color: #b2ebf2; } /* Lighter cyan for USD */
-    .eur-group { background-color: #fffde7; } /* Lighter yellow for EUR */
-    .rub-group { background-color: #e3f2fd; } /* Lighter blue for RUB */
-
-    /* Specific column styling for purchase/sale rates */
-    .usd-group-buy-rate { background-color: #80deea; } /* Darker cyan for USD Buy */
-    .usd-group-sell-rate { background-color: #4dd0e1; } /* Even darker cyan for USD Sell */
-    .eur-group-buy-rate { background-color: #fff59d; } /* Darker yellow for EUR Buy */
-    .eur-group-sell-rate { background-color: #ffee58; } /* Even darker yellow for EUR Sell */
-    .rub-group-buy-rate { background-color: #90caf9; } /* Darker blue for RUB Buy */
-    .rub-group-sell-rate { background-color: #42a5f5; } /* Even darker blue for RUB Sell */
-
-    /* Specific column styling for overlap rates */
-    .usd-group-overlap-rate { color: #00796b; } /* Teal for USD Overlap */
-    .eur-group-overlap-rate { color: #f57f17; } /* Orange for EUR Overlap */
-    .rub-group-overlap-rate { color: #1565c0; } /* Dark blue for RUB Overlap */
-
-    table {
-        width: 95%;
-        border-collapse: collapse;
-        margin: 10px auto;
-        table-layout: fixed;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 3px;
-        text-align: center;
-        font-size: 10px;
-        vertical-align: middle;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    th {
-        background-color: #f2f2f2;
-        white-space: normal;
-        word-break: break-word;
-    }
-    .negative-cell {
-        background-color: #f44336;
-        color: white;
-        font-weight: bold;
-    }
-    .bold-text {
-        font-weight: bold;
-    }
-    h2 {
-        padding-left: 2.5%;
-        margin-bottom: 5px;
-        margin-top: 20px;
-    }
-</style>
-
-<div style="display: flex; flex-direction: column; padding-left: 2.5%; margin-bottom: 10px;">
-    {% if datetimes.model_calc_dttm %}
-        <span style="margin: 3px; font-size: 12px;">Модель рассчитана в: {{ datetimes.model_calc_dttm[:19] }}</span>
-    {% endif %}
-    {% if datetimes.finrez_dttm %}
-        <span style="margin: 3px; font-size: 12px;">Данные алгоритма финреза загружены в: {{ datetimes.model_calc_dttm[:19] }}</span>
-    {% endif %}
-    {% if datetimes.kurs_perekrutiya_dttm %}
-        <span style="margin: 3px; font-size: 12px;">Курсы перекрытия обновлены в: {{ datetimes.kurs_perekrutiya_dttm[:19] }}</span>
-    {% endif %}
-</div>
-
-{% for region_name, items in regions_data.items() %}
-    {% if region_name != 'default_region_name' %}
-    <h2><strong>{{ region_name }}</strong></h2>
-    {% endif %}
-    <table>
-        <thead>
-            <tr>
-                {% for header in header_columns %}
-                    {% set currency_class = '' %}
-                    {% if header.lower().startswith('usd') %}{% set currency_class = 'usd-group' %}
-                    {% elif header.lower().startswith('eur') %}{% set currency_class = 'eur-group' %}
-                    {% elif header.lower().startswith('rub') %}{% set currency_class = 'rub-group' %}
-                    {% endif %}
-
-                    {% set column_header_class = currency_class %}
-                    {% if header.endswith("курс покупки") %}
-                        {% if header.lower().startswith('usd') %}{% set column_header_class = 'usd-group-buy-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set column_header_class = 'eur-group-buy-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set column_header_class = 'rub-group-buy-rate' %}
-                        {% endif %}
-                    {% elif header.endswith("курс продажи") %}
-                        {% if header.lower().startswith('usd') %}{% set column_header_class = 'usd-group-sell-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set column_header_class = 'eur-group-sell-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set column_header_class = 'rub-group-sell-rate' %}
-                        {% endif %}
-                    {% endif %}
-
-                    <th class="{{ column_header_class }}">{{ header }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr>
-                {% for header in header_columns %}
-                    {% set currency_class = '' %}
-                    {% if header.lower().startswith('usd') %}{% set currency_class = 'usd-group' %}
-                    {% elif header.lower().startswith('eur') %}{% set currency_class = 'eur-group' %}
-                    {% elif header.lower().startswith('rub') %}{% set currency_class = 'rub-group' %}
-                    {% endif %}
-
-                    {% set cell_class = currency_class %}
-                    {% if header.endswith("курс покупки") %}
-                        {% if header.lower().startswith('usd') %}{% set cell_class = 'usd-group-buy-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set cell_class = 'eur-group-buy-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set cell_class = 'rub-group-buy-rate' %}
-                        {% endif %}
-                    {% elif header.endswith("курс продажи") %}
-                        {% if header.lower().startswith('usd') %}{% set cell_class = 'usd-group-sell-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set cell_class = 'eur-group-sell-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set cell_class = 'rub-group-sell-rate' %}
-                        {% endif %}
-                    {% elif header.endswith("курс перекрытия") %}
-                        {% if header.lower().startswith('usd') %}{% set cell_class = 'usd-group-overlap-rate' %}
-                        {% elif header.lower().startswith('eur') %}{% set cell_class = 'eur-group-overlap-rate' %}
-                        {% elif header.lower().startswith('rub') %}{% set cell_class = 'rub-group-overlap-rate' %}
-                        {% endif %}
-                    {% endif %}
-
-                    {% set value = item[header] %}
-                    <td class="{{ cell_class }}">
-                        {% if value is number %}
-                            {% if header == 'Номер точки продаж' %}
-                                <strong><a href="/{{ value }}">{{ value }}</a></strong>
-                            {% else %}
-                                {% set formatted_value = value|round(3) %}
-                                {% if header.endswith("курс покупки") or header.endswith("курс продажи") or header.endswith("курс перекрытия") %}
-                                    {{ formatted_value }}
-                                {% elif header.lower().endswith('доходы') or header.lower().endswith('обороты покупка факт') or header.lower().endswith('обороты продажа факт') %}
-                                    <span class="bold-text">{{ formatted_value }}</span>
+{# list.html #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Эластичность курса - свод</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='custom___.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='pico.css') }}">
+</head>
+<body>
+    <main class="main-no-padding">
+        <nav class="nav-container">
+                <div class="nav-left">
+                    <span class="nav-title">Сводный вид</span>
+                </div>
+                <div class="nav-actions">
+                    <div class="model-switcher-label">
+                        <span>Подход:</span>
+                        <strong>{{ model_type }}</strong>
+                    </div>
+                    <div class="button-group">
+                        <form action="change-model-type" method="post">
+                            <button type="submit" class="nav-button secondary outline">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/>
+                                </svg>
+                                {% if model_type == 'causal' %}
+                                    Сменить на Predictive
                                 {% else %}
-                                    {{ formatted_value }}
+                                    Сменить на Causal
                                 {% endif %}
-                            {% endif %}
-                        {% else %}
-                            {% if header.lower().endswith('доходы') or header.lower().endswith('обороты покупка факт') or header.lower().endswith('обороты продажа факт') %}
-                                <span class="bold-text">{{ value|default('') }}</span>
-                            {% else %}
-                                {{ value|default('') }}
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% endfor %}
+                            </button>
+                        </form>
+                        <form action="/" method="get">
+                            <input type="hidden" name="action" value="press">
+                            <button type="submit" class="nav-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9c-4.97 0-9-4.03-9-9s4.03-9 9-9c2.49 0 4.74.99 6.35 2.65L14 9h7V2l-2.35 2.35A9 9 0 0 0 3 12a9 9 0 0 0 9 9c4.97 0 9-4.03 9-9z"/></svg>
+                                Полный пересчет
+                            </button>
+                        </form>
+                        <details role="list" class="nav-dropdown">
+                            <summary role="button" class="nav-button outline secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Скачать отчет
+                            </summary>
+                            <ul>
+                                <li><a href="/download/file_short" download="short__usd_eur_rub.xlsx">Краткий отчет</a></li>
+                                <li><a href="/download/file_long" download="long__usd_eur_rub.xlsx">Полный отчет</a></li>
+                            </ul>
+                        </details>
+                    </div>
+                </div>
+        </nav>
+        <div>
+            <div>
+                {% include 'item_table.html' %}
+            </div>
+        </div>
+    </main>
+</body>
+</html>
