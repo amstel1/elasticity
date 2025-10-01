@@ -61,14 +61,19 @@
         margin-bottom: 5px;
         margin-top: 20px;
     }
+    /* MODIFIED: Updated styles for input boxes */
     td input[type="number"] {
-    /* Pico overrides for inputs inside the table */
-    padding: 4px 8px;
-    font-size: 14px;
-    text-align: center;
-    border-radius: 4px;
-    margin-bottom: 0; /* Important: remove default pico margin */
-}
+        /* Pico overrides for inputs inside the table */
+        width: 90%;          /* Make the box narrower */
+        padding: 2px;        /* Reduce vertical padding */
+        font-size: 15px;     /* Make the font slightly bigger */
+        text-align: center;
+        border-radius: 4px;
+        margin: 0 auto;      /* Center the input within the cell */
+        display: block;
+        box-sizing: border-box;
+        margin-bottom: 0;    /* Important: remove default pico margin */
+    }
 </style>
 <body>
 
@@ -140,6 +145,40 @@
             </div>
         </form>
     </main>
+
+    <!-- ADDED: JavaScript for client-side validation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form.form-container');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    const inputs = form.querySelectorAll('input[type="number"]');
+                    let firstInvalidInput = null;
+
+                    for (const input of inputs) {
+                        const value = input.value.trim();
+                        // We only validate if the field is not empty.
+                        // An empty value is considered valid (meaning no offset).
+                        if (value !== '' && !isFinite(value)) {
+                            event.preventDefault(); // Stop form submission
+                            input.style.border = '2px solid red'; // Highlight the invalid field
+                            if (!firstInvalidInput) {
+                                firstInvalidInput = input;
+                            }
+                        } else {
+                            // Reset border for valid fields
+                            input.style.border = '';
+                        }
+                    }
+
+                    if (firstInvalidInput) {
+                        alert('Пожалуйста, введите корректные числовые значения. Недопустимые поля выделены красным.');
+                        firstInvalidInput.focus(); // Focus on the first invalid field
+                    }
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>
