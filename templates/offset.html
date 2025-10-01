@@ -5,14 +5,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактирование смещений курсов</title>
-    
-    <!-- 1. Reference to Pico CSS (or your base framework) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    
-    <!-- 2. Reference to your custom styles -->
-    <!-- Assumes your static files are served from a 'static' directory -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='custom___.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='pico.css') }}">
 </head>
+<style>
+    /* Currency group background colors */
+    .usd-group { background-color: #b2ebf2; } /* Lighter cyan for USD */
+    .eur-group { background-color: #fffde7; } /* Lighter yellow for EUR */
+    .rub-group { background-color: #e3f2fd; } /* Lighter blue for RUB */
+
+    /* Specific column styling for purchase/sale rates */
+    .usd-group-buy-rate { background-color: #80deea; } /* Darker cyan for USD Buy */
+    .usd-group-sell-rate { background-color: #4dd0e1; } /* Even darker cyan for USD Sell */
+    .eur-group-buy-rate { background-color: #fff59d; } /* Darker yellow for EUR Buy */
+    .eur-group-sell-rate { background-color: #ffee58; } /* Even darker yellow for EUR Sell */
+    .rub-group-buy-rate { background-color: #90caf9; } /* Darker blue for RUB Buy */
+    .rub-group-sell-rate { background-color: #42a5f5; } /* Even darker blue for RUB Sell */
+
+    /* Specific column styling for overlap rates */
+    .usd-group-overlap-rate { color: #00796b; } /* Teal for USD Overlap */
+    .eur-group-overlap-rate { color: #f57f17; } /* Orange for EUR Overlap */
+    .rub-group-overlap-rate { color: #1565c0; } /* Dark blue for RUB Overlap */
+
+    table {
+        width: 95%;
+        border-collapse: collapse;
+        margin: 10px auto;
+        table-layout: fixed;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 3px;
+        text-align: center;
+        font-size: 10px;
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    th {
+        background-color: #f2f2f2;
+        white-space: normal;
+        word-break: break-word;
+    }
+    .negative-cell {
+        background-color: #f44336;
+        color: white;
+        font-weight: bold;
+    }
+    .bold-text {
+        font-weight: bold;
+    }
+    h2 {
+        padding-left: 2.5%;
+        margin-bottom: 5px;
+        margin-top: 20px;
+    }
+    td input[type="number"] {
+    /* Pico overrides for inputs inside the table */
+    padding: 4px 8px;
+    font-size: 14px;
+    text-align: center;
+    border-radius: 4px;
+    margin-bottom: 0; /* Important: remove default pico margin */
+}
+</style>
 <body>
 
     <main class="container">
@@ -44,7 +101,7 @@
                         <td class="sales-point-cell">
                             <strong><a href="/{{ point_id }}">{{ point_id }}</a></strong>
                         </td>
-                        
+
                         {# USD Columns #}
                         <td class="usd-group col-buy">
                             <input type="number" name="offsets[{{ point_id }}][usd_buy]" step="0.001" placeholder="0.000" value="{{ values.usd_buy | default('', true) }}">
@@ -60,7 +117,7 @@
                         <td class="eur-group col-sell">
                             <input type="number" name="offsets[{{ point_id }}][eur_sell]" step="0.001" placeholder="0.000" value="{{ values.eur_sell | default('', true) }}">
                         </td>
-                        
+
                         {# RUB Columns #}
                         <td class="rub-group col-buy">
                              <input type="number" name="offsets[{{ point_id }}][rub_buy]" step="0.001" placeholder="0.000" value="{{ values.rub_buy | default('', true) }}">
