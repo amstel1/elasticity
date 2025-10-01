@@ -1,0 +1,83 @@
+{# edit_offsets.html #}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование смещений курсов</title>
+    
+    <!-- 1. Reference to Pico CSS (or your base framework) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    
+    <!-- 2. Reference to your custom styles -->
+    <!-- Assumes your static files are served from a 'static' directory -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+</head>
+<body>
+
+    <main class="container">
+        <h1>Редактирование смещений курсов</h1>
+
+        <!-- The form wrapper for the entire table -->
+        <form method="POST" action="/offset" class="form-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="sales-point-header">Номер точки продаж</th>
+                        <th colspan="2" class="usd-group">USD</th>
+                        <th colspan="2" class="eur-group">EUR</th>
+                        <th colspan="2" class="rub-group">RUB</th>
+                    </tr>
+                    <tr>
+                        <th class="usd-group col-buy">Покупка</th>
+                        <th class="usd-group col-sell">Продажа</th>
+                        <th class="eur-group col-buy">Покупка</th>
+                        <th class="eur-group col-sell">Продажа</th>
+                        <th class="rub-group col-buy">Покупка</th>
+                        <th class="rub-group col-sell">Продажа</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# Loop through the context dictionary to populate the table rows #}
+                    {% for point_id, values in offsets_data.items() %}
+                    <tr>
+                        <td class="sales-point-cell">
+                            <strong><a href="/{{ point_id }}">{{ point_id }}</a></strong>
+                        </td>
+                        
+                        {# USD Columns #}
+                        <td class="usd-group col-buy">
+                            <input type="number" name="offsets[{{ point_id }}][usd_buy]" step="0.001" placeholder="0.000" value="{{ values.usd_buy | default('', true) }}">
+                        </td>
+                        <td class="usd-group col-sell">
+                            <input type="number" name="offsets[{{ point_id }}][usd_sell]" step="0.001" placeholder="0.000" value="{{ values.usd_sell | default('', true) }}">
+                        </td>
+
+                        {# EUR Columns #}
+                        <td class="eur-group col-buy">
+                            <input type="number" name="offsets[{{ point_id }}][eur_buy]" step="0.001" placeholder="0.000" value="{{ values.eur_buy | default('', true) }}">
+                        </td>
+                        <td class="eur-group col-sell">
+                            <input type="number" name="offsets[{{ point_id }}][eur_sell]" step="0.001" placeholder="0.000" value="{{ values.eur_sell | default('', true) }}">
+                        </td>
+                        
+                        {# RUB Columns #}
+                        <td class="rub-group col-buy">
+                             <input type="number" name="offsets[{{ point_id }}][rub_buy]" step="0.001" placeholder="0.000" value="{{ values.rub_buy | default('', true) }}">
+                        </td>
+                        <td class="rub-group col-sell">
+                             <input type="number" name="offsets[{{ point_id }}][rub_sell]" step="0.001" placeholder="0.000" value="{{ values.rub_sell | default('', true) }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="submit-button-container">
+                <button type="submit">Сохранить смещения</button>
+            </div>
+        </form>
+    </main>
+
+</body>
+</html>
