@@ -37,7 +37,7 @@
         border: 1px solid #ddd;
         padding: 3px;
         text-align: center;
-        font-size: 10px;
+        font-size: 20px;
         vertical-align: middle;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -61,12 +61,12 @@
         margin-bottom: 5px;
         margin-top: 20px;
     }
-    /* MODIFIED: Updated styles for input boxes */
+
     td input[type="number"] {
         /* Pico overrides for inputs inside the table */
         width: 90%;          /* Make the box narrower */
         padding: 2px;        /* Reduce vertical padding */
-        font-size: 15px;     /* Make the font slightly bigger */
+        font-size: 18px;     /* Make the font slightly bigger */
         text-align: center;
         border-radius: 4px;
         margin: 0 auto;      /* Center the input within the cell */
@@ -114,26 +114,26 @@
 
                         {# USD Columns #}
                         <td class="usd-group col-buy">
-                            <input type="number" name="offsets[{{ point_id }}][usd_buy]" step="0.001" placeholder="0.000" value="{{ values.usd_buy | default('', true) }}">
+                            <input type="number" name="offsets[{{ point_id }}][usd_buy]" step="10.0" placeholder="0.0" value="{{ values.usd_buy | default('', true) }}">
                         </td>
                         <td class="usd-group col-sell">
-                            <input type="number" name="offsets[{{ point_id }}][usd_sell]" step="0.001" placeholder="0.000" value="{{ values.usd_sell | default('', true) }}">
+                            <input type="number" name="offsets[{{ point_id }}][usd_sell]" step="10.0" placeholder="0.0" value="{{ values.usd_sell | default('', true) }}">
                         </td>
 
                         {# EUR Columns #}
                         <td class="eur-group col-buy">
-                            <input type="number" name="offsets[{{ point_id }}][eur_buy]" step="0.001" placeholder="0.000" value="{{ values.eur_buy | default('', true) }}">
+                            <input type="number" name="offsets[{{ point_id }}][eur_buy]" step="10.0" placeholder="0.0" value="{{ values.eur_buy | default('', true) }}">
                         </td>
                         <td class="eur-group col-sell">
-                            <input type="number" name="offsets[{{ point_id }}][eur_sell]" step="0.001" placeholder="0.000" value="{{ values.eur_sell | default('', true) }}">
+                            <input type="number" name="offsets[{{ point_id }}][eur_sell]" step="10.0" placeholder="0.0" value="{{ values.eur_sell | default('', true) }}">
                         </td>
 
                         {# RUB Columns #}
                         <td class="rub-group col-buy">
-                             <input type="number" name="offsets[{{ point_id }}][rub_buy]" step="0.001" placeholder="0.000" value="{{ values.rub_buy | default('', true) }}">
+                             <input type="number" name="offsets[{{ point_id }}][rub_buy]" step="10.0" placeholder="0.0" value="{{ values.rub_buy | default('', true) }}">
                         </td>
                         <td class="rub-group col-sell">
-                             <input type="number" name="offsets[{{ point_id }}][rub_sell]" step="0.001" placeholder="0.000" value="{{ values.rub_sell | default('', true) }}">
+                             <input type="number" name="offsets[{{ point_id }}][rub_sell]" step="10.0" placeholder="0.0" value="{{ values.rub_sell | default('', true) }}">
                         </td>
                     </tr>
                     {% endfor %}
