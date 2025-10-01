@@ -1,91 +1,184 @@
-{# details.html #}
-{% from 'image.html' import static_image %}
+{# edit_offsets.html #}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Эластичность курса - детали</title>
-<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">-->
-    <link rel="stylesheet" href="{{ url_for('static', path='pico.css') }}">
+    <title>Редактирование смещений курсов</title>
     <link rel="stylesheet" href="{{ url_for('static', path='custom___.css') }}">
-
-<!--    <style>-->
-<!--        .nav-container {-->
-<!--            display: flex;-->
-<!--            justify-content: space-between;-->
-<!--            align-items: center;-->
-<!--            padding: 1rem;-->
-<!--            background-color: #f8f9fa; /* Light background */-->
-<!--            border-bottom: 1px solid #eee; /* Subtle border */-->
-<!--            border-collapse: collapse;-->
-<!--            width: 95%;-->
-<!--            margin-left: auto;-->
-<!--            margin-right: auto;-->
-<!--        }-->
-
-<!--        .nav-left {-->
-<!--            display: flex;-->
-<!--            align-items: center;-->
-<!--        }-->
-
-<!--        .nav-title {-->
-<!--            font-size: 1.25rem;-->
-<!--            font-weight: bold;-->
-<!--            margin-right: 1rem;-->
-<!--        }-->
-
-<!--        .nav-right {-->
-<!--            display: flex;-->
-<!--            align-items: center;-->
-<!--            gap: 1rem; /* Space between elements */-->
-<!--        }-->
-
-<!--        .nav-user-info {-->
-<!--            font-size: 0.9rem;-->
-<!--            color: #6c757d; /* Muted text color */-->
-<!--        }-->
-
-<!--        .nav-logout-button {-->
-<!--            &#45;&#45;pico-color: #dc3545; /* Red color for logout */-->
-<!--            &#45;&#45;pico-contrast: #fff;-->
-<!--            font-size: 0.9rem;-->
-<!--        }-->
-
-<!--        .calculate-form {-->
-<!--            display: flex;-->
-<!--            justify-content: center;-->
-<!--            margin-top: 1rem;-->
-<!--            gap: 1rem;-->
-<!--        }-->
-
-<!--        .custom-button {-->
-<!--            box-sizing: border-box;-->
-<!--            padding: 0.3rem 1.0rem;-->
-<!--            font-size: 0.7rem;-->
-<!--            max-width: 12rem;-->
-<!--        }-->
-<!--    </style>-->
+    <link rel="stylesheet" href="{{ url_for('static', path='pico.css') }}">
 </head>
+<style>
+    /* Currency group background colors */
+    .usd-group { background-color: #b2ebf2; } /* Lighter cyan for USD */
+    .eur-group { background-color: #fffde7; } /* Lighter yellow for EUR */
+    .rub-group { background-color: #e3f2fd; } /* Lighter blue for RUB */
+
+    /* Specific column styling for purchase/sale rates */
+    .usd-group-buy-rate { background-color: #80deea; } /* Darker cyan for USD Buy */
+    .usd-group-sell-rate { background-color: #4dd0e1; } /* Even darker cyan for USD Sell */
+    .eur-group-buy-rate { background-color: #fff59d; } /* Darker yellow for EUR Buy */
+    .eur-group-sell-rate { background-color: #ffee58; } /* Even darker yellow for EUR Sell */
+    .rub-group-buy-rate { background-color: #90caf9; } /* Darker blue for RUB Buy */
+    .rub-group-sell-rate { background-color: #42a5f5; } /* Even darker blue for RUB Sell */
+
+    /* Specific column styling for overlap rates */
+    .usd-group-overlap-rate { color: #00796b; } /* Teal for USD Overlap */
+    .eur-group-overlap-rate { color: #f57f17; } /* Orange for EUR Overlap */
+    .rub-group-overlap-rate { color: #1565c0; } /* Dark blue for RUB Overlap */
+
+    table {
+        width: 95%;
+        border-collapse: collapse;
+        margin: 10px auto;
+        table-layout: fixed;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 3px;
+        text-align: center;
+        font-size: 10px;
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    th {
+        background-color: #f2f2f2;
+        white-space: normal;
+        word-break: break-word;
+    }
+    .negative-cell {
+        background-color: #f44336;
+        color: white;
+        font-weight: bold;
+    }
+    .bold-text {
+        font-weight: bold;
+    }
+    h2 {
+        padding-left: 2.5%;
+        margin-bottom: 5px;
+        margin-top: 20px;
+    }
+    /* MODIFIED: Updated styles for input boxes */
+    td input[type="number"] {
+        /* Pico overrides for inputs inside the table */
+        width: 90%;          /* Make the box narrower */
+        padding: 2px;        /* Reduce vertical padding */
+        font-size: 15px;     /* Make the font slightly bigger */
+        text-align: center;
+        border-radius: 4px;
+        margin: 0 auto;      /* Center the input within the cell */
+        display: block;
+        box-sizing: border-box;
+        margin-bottom: 0;    /* Important: remove default pico margin */
+    }
+</style>
 <body>
-    <main class="main-no-padding">
+
+    <main class="container">
         <nav class="nav-container">
             <div class="nav-left">
-                <a href="/" role="button" class="nav-logout-button" style="margin-right: 1rem;">Назад</a>
-                <span class="nav-title">Детальная информация</span>
+                <a href="/" role="button" class="nav-logout-button" style="margin-right: 1rem;">Домой</a>
+                <span class="nav-title">Редактирование смещений курсов</span>
             </div>
         </nav>
 
-        <div>
-            {% include 'item_table.html' %}
-        </div>
+        <!-- The form wrapper for the entire table -->
+        <form method="POST" action="/offset" class="form-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="sales-point-header">Номер точки продаж</th>
+                        <th colspan="2" class="usd-group">USD</th>
+                        <th colspan="2" class="eur-group">EUR</th>
+                        <th colspan="2" class="rub-group">RUB</th>
+                    </tr>
+                    <tr>
+                        <th class="usd-group col-buy">Покупка</th>
+                        <th class="usd-group col-sell">Продажа</th>
+                        <th class="eur-group col-buy">Покупка</th>
+                        <th class="eur-group col-sell">Продажа</th>
+                        <th class="rub-group col-buy">Покупка</th>
+                        <th class="rub-group col-sell">Продажа</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# Loop through the context dictionary to populate the table rows #}
+                    {% for point_id, values in offsets_data.items() %}
+                    <tr>
+                        <td class="sales-point-cell">
+                            <strong><a href="/{{ point_id }}">{{ point_id }}</a></strong>
+                        </td>
 
+                        {# USD Columns #}
+                        <td class="usd-group col-buy">
+                            <input type="number" name="offsets[{{ point_id }}][usd_buy]" step="0.001" placeholder="0.000" value="{{ values.usd_buy | default('', true) }}">
+                        </td>
+                        <td class="usd-group col-sell">
+                            <input type="number" name="offsets[{{ point_id }}][usd_sell]" step="0.001" placeholder="0.000" value="{{ values.usd_sell | default('', true) }}">
+                        </td>
 
-         <div>
-            {% include 'competitors.html' %}
-        </div>
+                        {# EUR Columns #}
+                        <td class="eur-group col-buy">
+                            <input type="number" name="offsets[{{ point_id }}][eur_buy]" step="0.001" placeholder="0.000" value="{{ values.eur_buy | default('', true) }}">
+                        </td>
+                        <td class="eur-group col-sell">
+                            <input type="number" name="offsets[{{ point_id }}][eur_sell]" step="0.001" placeholder="0.000" value="{{ values.eur_sell | default('', true) }}">
+                        </td>
+
+                        {# RUB Columns #}
+                        <td class="rub-group col-buy">
+                             <input type="number" name="offsets[{{ point_id }}][rub_buy]" step="0.001" placeholder="0.000" value="{{ values.rub_buy | default('', true) }}">
+                        </td>
+                        <td class="rub-group col-sell">
+                             <input type="number" name="offsets[{{ point_id }}][rub_sell]" step="0.001" placeholder="0.000" value="{{ values.rub_sell | default('', true) }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="submit-button-container">
+                <button type="submit">Сохранить смещения</button>
+            </div>
+        </form>
     </main>
 
-</body>
+    <!-- ADDED: JavaScript for client-side validation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form.form-container');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    const inputs = form.querySelectorAll('input[type="number"]');
+                    let firstInvalidInput = null;
 
+                    for (const input of inputs) {
+                        const value = input.value.trim();
+                        // We only validate if the field is not empty.
+                        // An empty value is considered valid (meaning no offset).
+                        if (value !== '' && !isFinite(value)) {
+                            event.preventDefault(); // Stop form submission
+                            input.style.border = '2px solid red'; // Highlight the invalid field
+                            if (!firstInvalidInput) {
+                                firstInvalidInput = input;
+                            }
+                        } else {
+                            // Reset border for valid fields
+                            input.style.border = '';
+                        }
+                    }
+
+                    if (firstInvalidInput) {
+                        alert('Пожалуйста, введите корректные числовые значения. Недопустимые поля выделены красным.');
+                        firstInvalidInput.focus(); // Focus on the first invalid field
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
 </html>
