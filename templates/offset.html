@@ -62,11 +62,21 @@
         margin-top: 20px;
     }
 
+    /* --- MODIFIED CSS FOR THE INPUT BOX --- */
+    
+    /* Hide arrows from number input in Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
     td input[type="number"] {
         /* Pico overrides for inputs inside the table */
-        width: 90%;          /* Make the box narrower */
-        padding: 2px;        /* Reduce vertical padding */
-        font-size: 18px;     /* Make the font slightly bigger */
+        width: 80px;         /* Make the box significantly smaller */
+        -moz-appearance: textfield; /* Hide arrows in Firefox */
+        padding: 2px;        
+        font-size: 18px;     
         text-align: center;
         border-radius: 4px;
         margin: 0 auto;      /* Center the input within the cell */
