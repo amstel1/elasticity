@@ -1,3 +1,7 @@
+.main-no-padding {
+    padding: 1rem;
+}
+
 .nav-container {
     display: flex;
     justify-content: space-between;
@@ -35,12 +39,17 @@
 
 .button-group {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 0.75rem;
 }
 
 .button-group > form {
-    margin-button: 0;
+    margin-bottom: 0;
+}
+
+.button-group button,
+.button-group summary {
+    height: 83.88%;
 }
 
 .nav-button {
@@ -48,8 +57,7 @@
     align-items: center;
     gap: 0.5rem;
     margin: 0;
-    --pico-font-size: 0.9rem;
-    --pico-padding: 0.4rem 0.8rem;
+
 }
 
 .nav-dropdown {
@@ -60,6 +68,7 @@
 
 .nav-dropdown > summary {
     list-style: none;
+    margin: 0;
 }
 
 .nav-dropdown > summary::after {
@@ -113,19 +122,78 @@
     stroke-width: 2.5;
 }
 
-/* --- Added CSS for uniform button size --- */
 
-/* Make the containers for the buttons (form, details)
-   grow equally to fill the space. */
-.button-group > form,
-.button-group > details {
-    flex: 1;
+/* static/styles/main.css */
+
+/* --- General Page Layout --- */
+h1 {
+    text-align: center;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.form-container {
+    width: 95%;
+    margin: 0 auto;
+}
+
+.submit-button-container {
     display: flex;
+    justify-content: flex-end; /* Align button to the right */
+    margin-top: 1rem;
+    margin-bottom: 2rem; /* Add space at the bottom */
 }
 
-/* Make the buttons themselves fill their container and
-   center their content (icon and text). */
-.button-group .nav-button {
-    flex-grow: 1; /* or width: 100%; */
-    justify-content: center;
+/* --- Table Styling --- */
+table {
+    width: 100%; /* Changed from 95% to fill the form-container */
+    border-collapse: collapse;
+    margin: 20px auto;
+    table-layout: fixed;
+    font-size: 14px;
 }
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* --- Reused Color Grouping Classes --- */
+
+/* Base currency group colors */
+.usd-group { background-color: #e0f7fa; } /* Light cyan */
+.eur-group { background-color: #fff9c4; } /* Light yellow */
+.rub-group { background-color: #E9F2F9; } /* Light blue */
+
+/* Override for Buy/Sell columns */
+.usd-group.col-buy    { background-color: #b2ebf2; } /* Darker cyan */
+.usd-group.col-sell   { background-color: #f0fbfc; } /* Lighter cyan */
+
+.eur-group.col-buy    { background-color: #fff59d; } /* Darker yellow */
+.eur-group.col-sell   { background-color: #fffde7; } /* Lighter yellow */
+
+.rub-group.col-buy    { background-color: #dcebf6; } /* Darker blue */
+.rub-group.col-sell   { background-color: #f3f8fd; } /* Lighter blue */
+
+
+/* --- Element-Specific Styles --- */
+
+/* Style for the non-editable first column header and cells */
+.sales-point-header {
+    vertical-align: middle;
+}
+.sales-point-cell {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+
