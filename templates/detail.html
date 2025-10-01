@@ -5,205 +5,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Details</title>
+    <title>Эластичность курса - детали</title>
 <!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">-->
     <link rel="stylesheet" href="{{ url_for('static', path='pico.css') }}">
-    
-    <style>
-        .nav-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background-color: #f8f9fa; /* Light background */
-            border-bottom: 1px solid #eee; /* Subtle border */
-            border-collapse: collapse;
-            width: 95%;
-            margin-left: auto;
-            margin-right: auto;
-        }
+    <link rel="stylesheet" href="{{ url_for('static', path='custom___.css') }}">
 
-        .nav-left {
-            display: flex;
-            align-items: center;
-        }
+<!--    <style>-->
+<!--        .nav-container {-->
+<!--            display: flex;-->
+<!--            justify-content: space-between;-->
+<!--            align-items: center;-->
+<!--            padding: 1rem;-->
+<!--            background-color: #f8f9fa; /* Light background */-->
+<!--            border-bottom: 1px solid #eee; /* Subtle border */-->
+<!--            border-collapse: collapse;-->
+<!--            width: 95%;-->
+<!--            margin-left: auto;-->
+<!--            margin-right: auto;-->
+<!--        }-->
 
-        .nav-title {
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-right: 1rem;
-        }
+<!--        .nav-left {-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--        }-->
 
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem; /* Space between elements */
-        }
+<!--        .nav-title {-->
+<!--            font-size: 1.25rem;-->
+<!--            font-weight: bold;-->
+<!--            margin-right: 1rem;-->
+<!--        }-->
 
-        .nav-user-info {
-            font-size: 0.9rem;
-            color: #6c757d; /* Muted text color */
-        }
+<!--        .nav-right {-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            gap: 1rem; /* Space between elements */-->
+<!--        }-->
 
-        .nav-logout-button {
-            --pico-color: #dc3545; /* Red color for logout */
-            --pico-contrast: #fff;
-            font-size: 0.9rem;
-        }
+<!--        .nav-user-info {-->
+<!--            font-size: 0.9rem;-->
+<!--            color: #6c757d; /* Muted text color */-->
+<!--        }-->
 
-        .calculate-form {
-            display: flex;
-            justify-content: center;
-            margin-top: 1rem; /* Add some space above the button */
-            border-collapse: collapse;
-            width: 9%;
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
+<!--        .nav-logout-button {-->
+<!--            &#45;&#45;pico-color: #dc3545; /* Red color for logout */-->
+<!--            &#45;&#45;pico-contrast: #fff;-->
+<!--            font-size: 0.9rem;-->
+<!--        }-->
+
+<!--        .calculate-form {-->
+<!--            display: flex;-->
+<!--            justify-content: center;-->
+<!--            margin-top: 1rem;-->
+<!--            gap: 1rem;-->
+<!--        }-->
+
+<!--        .custom-button {-->
+<!--            box-sizing: border-box;-->
+<!--            padding: 0.3rem 1.0rem;-->
+<!--            font-size: 0.7rem;-->
+<!--            max-width: 12rem;-->
+<!--        }-->
+<!--    </style>-->
 </head>
 <body>
-    <main>
+    <main class="main-no-padding">
         <nav class="nav-container">
             <div class="nav-left">
-                <a href="/" role="button" class="nav-logout-button" style="margin-right: 1rem;">Back to List</a>
-                <span class="nav-title">Details</span>
+                <a href="/" role="button" class="nav-logout-button" style="margin-right: 1rem;">Назад</a>
+                <span class="nav-title">Детальная информация</span>
             </div>
-            {% if current_user %}
-            <div class="nav-right">
-                <span class="nav-user-info">Logged in as {{ current_user.user_name }}</span>
-                <a href="/logout" role="button" class="nav-logout-button">Logout</a>
-            </div>
-            {% endif %}
         </nav>
-        <form method="post" action="/calculate">
-            <div>
-                {% include 'item_table.html' %}
-            </div>
-            <div style="margin-right: 20px; text-align: center;">
-                <img src="/explain/?operation_type=prinyato&this_currency=usd" alt="prinyato usd">
-                <img src="/explain/?operation_type=vydano&this_currency=usd" alt="vydano usd">
-               
-                <img src="/explain/?operation_type=prinyato&this_currency=eur" alt="prinyato eur">
-                <img src="/explain/?operation_type=vydano&this_currency=eur" alt="vydano eur">
-                
-                <img src="/explain/?operation_type=prinyato&this_currency=rub" alt="prinyato rub">
-                <img src="/explain/?operation_type=vydano&this_currency=rub" alt="vydano rub">
-            </div>
-            <div class="calculate-form">
-                <input type="hidden" name="mode" value="explain">
-                <button type="submit">Calculate</button>
-            </div>
-        </form>
+
+        <div>
+            {% include 'item_table.html' %}
+        </div>
+
+
          <div>
             {% include 'competitors.html' %}
         </div>
     </main>
-<script>
-    function validateForm(event) {
-        let isValid = true;
-        const errorMessages = document.querySelectorAll('.error-message');
-        errorMessages.forEach(msg => msg.textContent = ''); // Clear previous errors
 
-        const numberFields = document.querySelectorAll('input[type="text"]');
-        numberFields.forEach(input => {
-            const value = input.value.trim();
-            const errorSpan = document.getElementById(`error_${input.name}`);
-
-            if (!value) {
-                isValid = false;
-                errorSpan.textContent = 'Поле не должно быть пустым.';
-            } else if (isNaN(parseInt(value)) || parseInt(value) != parseFloat(value)) {
-                isValid = false;
-                errorSpan.textContent = 'Введите целое число.';
-            } else if (parseInt(value) <= 0) {
-                isValid = false;
-                errorSpan.textContent = 'Число должно быть больше 0.';
-            }
-        });
-
-        {% for item in items %}
-        // EUR Range Validation
-        const eurKursPrinyato = document.querySelector('input[name="item_{{ item.id }}_eur_kurs_prinyato"]');
-        const eurKursPerekrytiya = document.querySelector('td.eur-group:nth-child(' + (header_columns.index('eur__Курс перекрытия') + 2) + ')');
-        const eurKursVydano = document.querySelector('input[name="item_{{ item.id }}_eur_kurs_vydano"]');
-
-        if (eurKursPrinyato && eurKursPerekrytiya && eurKursVydano) {
-            const prinyato = parseInt(eurKursPrinyato.value.trim()) || 0;
-            const perekrytiyaText = eurKursPerekrytiya.textContent.trim();
-            const perekrytiya = parseInt(perekrytiyaText) || 0;
-            const vydano = parseInt(eurKursVydano.value.trim()) || 0;
-            const errorPrinyato = document.getElementById(`error_item_{{ item.id }}_eur_kurs_prinyato`);
-            const errorVydano = document.getElementById(`error_item_{{ item.id }}_eur_kurs_vydano`);
-
-            if (eurKursPrinyato.value.trim() && eurKursVydano.value.trim() && !(vydano >= perekrytiya && perekrytiya >= prinyato)) {
-                isValid = false;
-                if (errorPrinyato.textContent === '') {
-                    errorPrinyato.textContent = 'Неверный диапазон курсов.';
-                }
-                if (errorVydano.textContent === '') {
-                    errorVydano.textContent = 'Неверный диапазон курсов.';
-                }
-            }
-        }
-
-        // USD Range Validation
-        const usdKursPrinyato = document.querySelector('input[name="item_{{ item.id }}_usd_kurs_prinyato"]');
-        const usdKursPerekrytiya = document.querySelector('td.usd-group:nth-child(' + (header_columns.index('usd__Курс перекрытия') + 2) + ')');
-        const usdKursVydano = document.querySelector('input[name="item_{{ item.id }}_usd_kurs_vydano"]');
-
-        if (usdKursPrinyato && usdKursPerekrytiya && usdKursVydano) {
-            const prinyato = parseInt(usdKursPrinyato.value.trim()) || 0;
-            const perekrytiyaText = usdKursPerekrytiya.textContent.trim();
-            const perekrytiya = parseInt(perekrytiyaText) || 0;
-            const vydano = parseInt(usdKursVydano.value.trim()) || 0;
-            const errorPrinyato = document.getElementById(`error_item_{{ item.id }}_usd_kurs_prinyato`);
-            const errorVydano = document.getElementById(`error_item_{{ item.id }}_usd_kurs_vydano`);
-
-            if (usdKursPrinyato.value.trim() && usdKursVydano.value.trim() && !(vydano >= perekrytiya && perekrytiya >= prinyato)) {
-                isValid = false;
-                if (errorPrinyato.textContent === '') {
-                    errorPrinyato.textContent = 'Неверный диапазон курсов.';
-                }
-                if (errorVydano.textContent === '') {
-                    errorVydano.textContent = 'Неверный диапазон курсов.';
-                }
-            }
-        }
-
-        // RUB Range Validation
-        const rubKursPrinyato = document.querySelector('input[name="item_{{ item.id }}_rub_kurs_prinyato"]');
-        const rubKursPerekrytiya = document.querySelector('td.rub-group:nth-child(' + (header_columns.index('rub__Курс перекрытия') + 2) + ')');
-        const rubKursVydano = document.querySelector('input[name="item_{{ item.id }}_rub_kurs_vydano"]');
-
-        if (rubKursPrinyato && rubKursPerekrytiya && rubKursVydano) {
-            const prinyato = parseInt(rubKursPrinyato.value.trim()) || 0;
-            const perekrytiyaText = rubKursPerekrytiya.textContent.trim();
-            const perekrytiya = parseInt(perekrytiyaText) || 0;
-            const vydano = parseInt(rubKursVydano.value.trim()) || 0;
-            const errorPrinyato = document.getElementById(`error_item_{{ item.id }}_rub_kurs_prinyato`);
-            const errorVydano = document.getElementById(`error_item_{{ item.id }}_rub_kurs_vydano`);
-
-            if (rubKursPrinyato.value.trim() && rubKursVydano.value.trim() && !(vydano >= perekrytiya && perekrytiya >= prinyato)) {
-                isValid = false;
-                if (errorPrinyato.textContent === '') {
-                    errorPrinyato.textContent = 'Неверный диапазон курсов.';
-                }
-                if (errorVydano.textContent === '') {
-                    errorVydano.textContent = 'Неверный диапазон курсов.';
-                }
-            }
-        }
-        {% endfor %}
-
-        if (!isValid) {
-            event.preventDefault(); // Prevent form submission if validation fails
-        }
-    }
-
-    const form = document.querySelector('form');
-    form.addEventListener('submit', validateForm);
-</script>
 </body>
 
 </html>
